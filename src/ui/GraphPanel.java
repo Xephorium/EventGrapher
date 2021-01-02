@@ -7,8 +7,10 @@ import java.awt.*;
 import java.awt.geom.Ellipse2D;
 import java.awt.geom.Line2D;
 import java.text.DecimalFormat;
+import java.util.Calendar;
 import java.util.Date;
 import java.util.List;
+import java.util.stream.Collectors;
 
 /* Event Grapher
  * Christopher Cruzen
@@ -38,7 +40,7 @@ class GraphPanel extends JPanel {
     private static final int TEXT_SIZE = 15;
     private static final int TEXT_LINE_SPACING = 2;
     private static final int TEXT_INDENT = 10;
-    private static final int TEXT_COLUMN = 230;
+    private static final int TEXT_COLUMN = 300;
 
     // Formatting Constants
     private DecimalFormat DECIMAL_FORMAT_3 = new DecimalFormat("0.00#");
@@ -52,11 +54,14 @@ class GraphPanel extends JPanel {
 
     // Stat Variables
     private double dailyAverageEvents;
+    private double weeklyAverageEvents;
     private double soloEventPercent;
     private double sharedEventPercent;
     private double virtualEventPercent;
     private String longestGap;
     private String shortestGap;
+    private String peakDay;
+    private String peakWeek;
 
 
     /*--- Constructor ---*/
@@ -71,12 +76,15 @@ class GraphPanel extends JPanel {
         virtualEventList = inputReader.getVirtualEventList();
 
         // Perform Calculations
-        dailyAverageEvents = fullEventList.size() / 366.0;
+        dailyAverageEvents = fullEventList.size() / 366.0;    // 2020 Leap Year
+        weeklyAverageEvents = fullEventList.size() / 52.2857; // 52 Weeks + 2/7 Extra
         soloEventPercent = soloEventList.size() / (double) fullEventList.size();
         sharedEventPercent = sharedEventList.size() / (double) fullEventList.size();
         virtualEventPercent = virtualEventList.size() / (double) fullEventList.size();
         longestGap = getLongestGap();
         shortestGap = getShortestGap();
+        peakDay = getPeakDay();
+        peakWeek = getPeakWeek();
 
         // Configure UI
         setBackground(BACKGROUND_COLOR);
@@ -127,7 +135,9 @@ class GraphPanel extends JPanel {
         graphics.setColor(TEXT_COLOR_SECONDARY);
         graphics.setFont(new Font("Sanserif", Font.PLAIN, TEXT_SIZE));
         graphics.drawString(
-                "Total: " + fullEventList.size() + " (Avg: " + format3(dailyAverageEvents) + " / day)",
+                "Total: " + fullEventList.size()
+                        + "  (Avg: " + format3(dailyAverageEvents)
+                        + "/day, " + format3(weeklyAverageEvents) + "/week)",
                 WINDOW_PADDING + TEXT_INDENT,
                 currentHeight
         );
@@ -136,7 +146,7 @@ class GraphPanel extends JPanel {
 
         // Solo Events
         graphics.drawString(
-                "Solo: " + soloEventList.size() + " (" + formatP(soloEventPercent) + "%)",
+                "Solo: " + soloEventList.size() + "  (" + formatP(soloEventPercent) + "%)",
                 WINDOW_PADDING + TEXT_INDENT,
                 currentHeight
         );
@@ -145,7 +155,7 @@ class GraphPanel extends JPanel {
 
         // Shared Events
         graphics.drawString(
-                "Shared: " + sharedEventList.size() + " (" + formatP(sharedEventPercent) + "%)",
+                "Shared: " + sharedEventList.size() + "  (" + formatP(sharedEventPercent) + "%)",
                 WINDOW_PADDING + TEXT_INDENT,
                 currentHeight
         );
@@ -154,7 +164,7 @@ class GraphPanel extends JPanel {
 
         // Virtual Events
         graphics.drawString(
-                "Virtual: " + virtualEventList.size() + " (" + formatP(virtualEventPercent) + "%)",
+                "Virtual: " + virtualEventList.size() + "  (" + formatP(virtualEventPercent) + "%)",
                 WINDOW_PADDING + TEXT_INDENT,
                 currentHeight
         );
@@ -174,6 +184,26 @@ class GraphPanel extends JPanel {
         graphics.setColor(TEXT_COLOR_SECONDARY);
         graphics.drawString(
                 "Shortest Gap: " + shortestGap,
+                WINDOW_PADDING + TEXT_COLUMN,
+                currentHeight
+        );
+        currentHeight += graphics.getFontMetrics().getHeight();
+        currentHeight += TEXT_LINE_SPACING;
+
+        // Peak Day
+        graphics.setColor(TEXT_COLOR_SECONDARY);
+        graphics.drawString(
+                "Peak Day: " + peakDay,
+                WINDOW_PADDING + TEXT_COLUMN,
+                currentHeight
+        );
+        currentHeight += graphics.getFontMetrics().getHeight();
+        currentHeight += TEXT_LINE_SPACING;
+
+        // Peak Week
+        graphics.setColor(TEXT_COLOR_SECONDARY);
+        graphics.drawString(
+                "Peak Week: " + peakWeek,
                 WINDOW_PADDING + TEXT_COLUMN,
                 currentHeight
         );
@@ -253,6 +283,70 @@ class GraphPanel extends JPanel {
                 + minutes + "min  ("
                 + InputReader.EVENT_STRING_FORMAT.format(start).toLowerCase() + " - "
                 + InputReader.EVENT_STRING_FORMAT.format(end).toLowerCase() + ").";
+    }
+
+    private String getPeakDay() {
+
+        // Find Peak Day
+        int most = 0;
+        Date peakDay = new Date();
+        for (Date event : fullEventList) {
+            List<Date> dayEvents = fullEventList.stream().filter(day ->
+                    areDaysEqual(event, day)
+            ).collect(Collectors.toList());
+            if (dayEvents.size() > most) {
+                most = dayEvents.size();
+                peakDay = getZeroTimeDate(event);
+            }
+        }
+
+        return " " + most + " on " + InputReader.EVENT_DAY_FORMAT.format(peakDay);
+    }
+
+    private String getPeakWeek() {
+
+        // Find Peak Week
+        int most = 0;
+        Date peakWeekStart = new Date();
+        for (int x = 0; x < fullEventList.size() - 8; x++) {
+            Date startEvent = fullEventList.get(x);
+            Date rangeEnd = getDateOneWeekLater(startEvent);
+
+            List<Date> weekEvents = fullEventList.stream().filter(day ->
+                    day.compareTo(startEvent) >= 0 && rangeEnd.compareTo(day) > 0
+            ).collect(Collectors.toList());
+            if (weekEvents.size() > most) {
+                most = weekEvents.size();
+                peakWeekStart = startEvent;
+            }
+        }
+
+        return " " + most + " beginning (" + InputReader.EVENT_STRING_FORMAT.format(peakWeekStart).toLowerCase() + ")";
+    }
+
+    private boolean areDaysEqual(Date d1, Date d2) {
+        Date newDate1 = getZeroTimeDate(d1);
+        Date newDate2 = getZeroTimeDate(d2);
+
+        return newDate1.compareTo(newDate2) == 0;
+    }
+
+    private Date getDateOneWeekLater(Date date) {
+        Calendar calendar = Calendar.getInstance();
+        calendar.setTime(date);
+        calendar.add(Calendar.DATE, 7);
+        return calendar.getTime();
+    }
+
+    private Date getZeroTimeDate(Date date) {
+        Calendar calendar = Calendar.getInstance();
+        calendar.setTime(date);
+        calendar.set(Calendar.HOUR_OF_DAY, 0);
+        calendar.set(Calendar.MINUTE, 0);
+        calendar.set(Calendar.SECOND, 0);
+        calendar.set(Calendar.MILLISECOND, 0);
+
+        return calendar.getTime();
     }
 
     private int truncateDecimals(double number) {

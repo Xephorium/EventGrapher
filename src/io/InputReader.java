@@ -24,6 +24,7 @@ public class InputReader {
 
     // Constants
     public static final SimpleDateFormat EVENT_STRING_FORMAT = new SimpleDateFormat("MM.dd.yyyy hh:mma");
+    public static final SimpleDateFormat EVENT_DAY_FORMAT = new SimpleDateFormat("MM.dd.yyyy");
     private static final String INPUT_FILENAME = "input\\input.txt";
 
     // Variables
@@ -49,7 +50,7 @@ public class InputReader {
 
         // Parse Events
         try {
-            for (String eventString: inputContents) {
+            for (String eventString : inputContents) {
                 eventList.add(EVENT_STRING_FORMAT.parse(eventString));
             }
         } catch (ParseException exception) {
@@ -66,7 +67,7 @@ public class InputReader {
 
         // Parse Events
         try {
-            for (String eventString: inputContents) {
+            for (String eventString : inputContents) {
                 if (!eventString.contains("*")) {
                     eventList.add(EVENT_STRING_FORMAT.parse(eventString));
                 }
@@ -85,7 +86,7 @@ public class InputReader {
 
         // Parse Events
         try {
-            for (String eventString: inputContents) {
+            for (String eventString : inputContents) {
                 if (eventString.contains("**")) {
                     eventList.add(EVENT_STRING_FORMAT.parse(eventString));
                 }
@@ -104,7 +105,7 @@ public class InputReader {
 
         // Parse Events
         try {
-            for (String eventString: inputContents) {
+            for (String eventString : inputContents) {
                 if (eventString.contains("*") && !eventString.contains("**")) {
                     eventList.add(EVENT_STRING_FORMAT.parse(eventString));
                 }
