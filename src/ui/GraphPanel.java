@@ -29,6 +29,8 @@ class GraphPanel extends JPanel {
     private static final int POINT_DIAMETER_SMALL = 5;
     private static final int POINT_OFFSET = 0;
 
+
+    // Paint Constants
     private static final Color BACKGROUND_COLOR = new Color(255, 255, 255);
     private static final Color TEXT_COLOR_PRIMARY = new Color(0, 0, 0);
     private static final Color TEXT_COLOR_SECONDARY = new Color(80, 80, 80);
@@ -36,18 +38,25 @@ class GraphPanel extends JPanel {
     private static final int TEXT_SIZE = 15;
     private static final int TEXT_LINE_SPACING = 2;
     private static final int TEXT_INDENT = 10;
-    private static final int TEXT_COLUMN = 30;
+    private static final int TEXT_COLUMN = 230;
 
+    // Formatting Constants
     private DecimalFormat DECIMAL_FORMAT_3 = new DecimalFormat("0.00#");
     private DecimalFormat DECIMAL_FORMAT_P = new DecimalFormat("0.#");
 
-    // Variables
-    GraphWindow parent;
-    InputReader inputReader;
+    // Data Variables
     List<Date> fullEventList;
     List<Date> soloEventList;
     List<Date> sharedEventList;
     List<Date> virtualEventList;
+
+    // Stat Variables
+    private double dailyAverageEvents;
+    private double soloEventPercent;
+    private double sharedEventPercent;
+    private double virtualEventPercent;
+    private String longestGap;
+    private String shortestGap;
 
 
     /*--- Constructor ---*/
@@ -55,11 +64,19 @@ class GraphPanel extends JPanel {
     GraphPanel() {
 
         // Parse & Store Event Data
-        inputReader = new InputReader();
+        InputReader inputReader = new InputReader();
         fullEventList = inputReader.getFullEventList();
         soloEventList = inputReader.getSoloEventList();
         sharedEventList = inputReader.getSharedEventList();
         virtualEventList = inputReader.getVirtualEventList();
+
+        // Perform Calculations
+        dailyAverageEvents = fullEventList.size() / 366.0;
+        soloEventPercent = soloEventList.size() / (double) fullEventList.size();
+        sharedEventPercent = sharedEventList.size() / (double) fullEventList.size();
+        virtualEventPercent = virtualEventList.size() / (double) fullEventList.size();
+        longestGap = getLongestGap();
+        shortestGap = getShortestGap();
 
         // Configure UI
         setBackground(BACKGROUND_COLOR);
@@ -92,10 +109,11 @@ class GraphPanel extends JPanel {
 
         // Set Up Local Variables
         int currentHeight = WINDOW_PADDING * 2;
+        int infoBaseHeight;
 
         // Title
         graphics.setColor(TEXT_COLOR_PRIMARY);
-        graphics.setFont(new Font ("Sanserif", Font.BOLD, TEXT_SIZE));
+        graphics.setFont(new Font("Sanserif", Font.BOLD, TEXT_SIZE));
         graphics.drawString(
                 "2020 Events",
                 WINDOW_PADDING,
@@ -103,12 +121,13 @@ class GraphPanel extends JPanel {
         );
         currentHeight += graphics.getFontMetrics().getHeight();
         currentHeight += TEXT_LINE_SPACING;
+        infoBaseHeight = currentHeight;
 
         // Events
         graphics.setColor(TEXT_COLOR_SECONDARY);
-        graphics.setFont(new Font ("Sanserif", Font.PLAIN, TEXT_SIZE));
+        graphics.setFont(new Font("Sanserif", Font.PLAIN, TEXT_SIZE));
         graphics.drawString(
-                "Total: " + fullEventList.size() + " (Avg: " + format3(fullEventList.size() / 366.0) + " / day)",
+                "Total: " + fullEventList.size() + " (Avg: " + format3(dailyAverageEvents) + " / day)",
                 WINDOW_PADDING + TEXT_INDENT,
                 currentHeight
         );
@@ -116,10 +135,8 @@ class GraphPanel extends JPanel {
         currentHeight += TEXT_LINE_SPACING;
 
         // Solo Events
-        graphics.setColor(TEXT_COLOR_SECONDARY);
-        graphics.setFont(new Font ("Sanserif", Font.PLAIN, TEXT_SIZE));
         graphics.drawString(
-                "Solo: " + soloEventList.size() + " (" + formatP(soloEventList.size() / (double) fullEventList.size()) + "%)",
+                "Solo: " + soloEventList.size() + " (" + formatP(soloEventPercent) + "%)",
                 WINDOW_PADDING + TEXT_INDENT,
                 currentHeight
         );
@@ -127,10 +144,8 @@ class GraphPanel extends JPanel {
         currentHeight += TEXT_LINE_SPACING;
 
         // Shared Events
-        graphics.setColor(TEXT_COLOR_SECONDARY);
-        graphics.setFont(new Font ("Sanserif", Font.PLAIN, TEXT_SIZE));
         graphics.drawString(
-                "Shared: " + sharedEventList.size() + " (" + formatP(sharedEventList.size() / (double) fullEventList.size()) + "%)",
+                "Shared: " + sharedEventList.size() + " (" + formatP(sharedEventPercent) + "%)",
                 WINDOW_PADDING + TEXT_INDENT,
                 currentHeight
         );
@@ -138,11 +153,28 @@ class GraphPanel extends JPanel {
         currentHeight += TEXT_LINE_SPACING;
 
         // Virtual Events
-        graphics.setColor(TEXT_COLOR_SECONDARY);
-        graphics.setFont(new Font ("Sanserif", Font.PLAIN, TEXT_SIZE));
         graphics.drawString(
-                "Virtual: " + virtualEventList.size() + " (" + formatP(virtualEventList.size() / (double) fullEventList.size()) + "%)",
+                "Virtual: " + virtualEventList.size() + " (" + formatP(virtualEventPercent) + "%)",
                 WINDOW_PADDING + TEXT_INDENT,
+                currentHeight
+        );
+
+        // Longest Gap
+        currentHeight = infoBaseHeight;
+        graphics.setColor(TEXT_COLOR_SECONDARY);
+        graphics.drawString(
+                "Longest Gap: " + longestGap,
+                WINDOW_PADDING + TEXT_COLUMN,
+                currentHeight
+        );
+        currentHeight += graphics.getFontMetrics().getHeight();
+        currentHeight += TEXT_LINE_SPACING;
+
+        // Shortest Gap
+        graphics.setColor(TEXT_COLOR_SECONDARY);
+        graphics.drawString(
+                "Shortest Gap: " + shortestGap,
+                WINDOW_PADDING + TEXT_COLUMN,
                 currentHeight
         );
         currentHeight += graphics.getFontMetrics().getHeight();
@@ -158,6 +190,75 @@ class GraphPanel extends JPanel {
 
     private String format3(double value) {
         return DECIMAL_FORMAT_3.format(value);
+    }
+
+
+    /*--- Private Analysis Methods ---*/
+
+    private String getLongestGap() {
+
+        // Find Longest Gap
+        long longestGap = 0;
+        Date start = fullEventList.get(0);
+        Date end = fullEventList.get(1);
+        for (int x = 0; x < fullEventList.size() - 2; x++) {
+            long testGap = fullEventList.get(x + 1).getTime() - fullEventList.get(x).getTime();
+            if (testGap > longestGap) {
+                longestGap = testGap;
+                start = fullEventList.get(x);
+                end = fullEventList.get(x + 1);
+            }
+        }
+
+        // Format Output
+        int days = truncateDecimals(longestGap / 1000 / 60 / 60 / 24.0);
+        long daysInMillis = days * 24 * 60 * 60 * 1000;
+        int hours = truncateDecimals((longestGap - daysInMillis) / 1000 / 60 / 60.0);
+        int hoursInMillis = hours * 60 * 60 * 1000;
+        int minutes = truncateDecimals((longestGap - daysInMillis - hoursInMillis) / 1000 / 60.0);
+
+
+        return " " + days + "d, "
+                + hours + "hr, and "
+                + minutes + "min  ("
+                + InputReader.EVENT_STRING_FORMAT.format(start).toLowerCase() + " - "
+                + InputReader.EVENT_STRING_FORMAT.format(end).toLowerCase() + ").";
+    }
+
+    private String getShortestGap() {
+
+        // Find Shortest Gap
+        long shortestGap = fullEventList.get(1).getTime() - fullEventList.get(0).getTime();
+        Date start = fullEventList.get(0);
+        Date end = fullEventList.get(1);
+        for (int x = 1; x < fullEventList.size() - 3; x++) {
+            long testGap = fullEventList.get(x + 1).getTime() - fullEventList.get(x).getTime();
+            if (testGap < shortestGap) {
+                shortestGap = testGap;
+                start = fullEventList.get(x);
+                end = fullEventList.get(x + 1);
+            }
+        }
+
+        // Format Output
+        int days = truncateDecimals(shortestGap / 1000 / 60 / 60 / 24.0);
+        long daysInMillis = days * 24 * 60 * 60 * 1000;
+        int hours = truncateDecimals((shortestGap - daysInMillis) / 1000 / 60 / 60.0);
+        int hoursInMillis = hours * 60 * 60 * 1000;
+        int minutes = truncateDecimals((shortestGap - daysInMillis - hoursInMillis) / 1000 / 60.0);
+
+
+        return " " + days + "d, "
+                + hours + "hr, and "
+                + minutes + "min  ("
+                + InputReader.EVENT_STRING_FORMAT.format(start).toLowerCase() + " - "
+                + InputReader.EVENT_STRING_FORMAT.format(end).toLowerCase() + ").";
+    }
+
+    private int truncateDecimals(double number) {
+        String value = "" + number;
+        String newValue = value.replaceFirst("\\..*$", "");
+        return Integer.valueOf(newValue);
     }
 
 

@@ -23,8 +23,8 @@ public class InputReader {
     /*--- Variable Declarations ---*/
 
     // Constants
+    public static final SimpleDateFormat EVENT_STRING_FORMAT = new SimpleDateFormat("MM.dd.yyyy hh:mma");
     private static final String INPUT_FILENAME = "input\\input.txt";
-    private static final SimpleDateFormat EVENT_STRING_FORMAT = new SimpleDateFormat("MM.dd.yyyy - hh:mma");
 
     // Variables
     private File inputFile;
