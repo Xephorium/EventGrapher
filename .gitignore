@@ -3,5 +3,8 @@
 .idea/
 *.iml
 
+# Input Files
+input/
+
 # Build Files
 build/
