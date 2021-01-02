@@ -133,7 +133,7 @@ class GraphPanel extends JPanel {
 
         // Events
         graphics.setColor(TEXT_COLOR_SECONDARY);
-        graphics.setFont(new Font("Sanserif", Font.PLAIN, TEXT_SIZE));
+        graphics.setFont(new Font("Sanserif", Font.BOLD, TEXT_SIZE - 1));
         graphics.drawString(
                 "Total: " + fullEventList.size()
                         + "  (Avg: " + format3(dailyAverageEvents)
