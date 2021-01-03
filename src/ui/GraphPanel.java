@@ -21,8 +21,15 @@ import java.util.stream.Collectors;
  *   GraphPanel is backbone of Event Grapher. It delegates dataset parsing to a utility IO
  * class, stores the retrieved event lists, and uses that data to draw stats and infographics
  * to the screen.
+ *
+ * Note: Deprecation warnings are suppressed because the Date class has been functionally
+ *       deprecated forever and most of its methods throw compile-time warnings. I probably
+ *       ought to be using DateTime or something newer. But, this project is a quick weekend
+ *       hackjob in an ancient language that doesn't even bother with sensible architecture.
+ *       YOU'LL NEVER CATCH ME ALIIIIIVE.
  */
 
+@SuppressWarnings("deprecation")
 class GraphPanel extends JPanel {
 
 
@@ -36,13 +43,14 @@ class GraphPanel extends JPanel {
     private static final Color BACKGROUND_COLOR = new Color(255, 255, 255);
     private static final Color TEXT_COLOR_PRIMARY = new Color(0, 0, 0);
     private static final Color TEXT_COLOR_SECONDARY = new Color(80, 80, 80);
+    private static final Color DETAIL_COLOR = new Color(69, 181, 230);
     private static final int WINDOW_PADDING = 15;
     private static final int TEXT_SIZE = 15;
     private static final int TEXT_LINE_SPACING = 2;
     private static final int TEXT_INDENT = 10;
     private static final int TEXT_COLUMN = 300;
-    private static final Point DAY_GRID_START = new Point(20, 160);
-    private static final int DAY_GRID_BOX_SIZE = 16;
+    private static final Point DAY_GRID_START = new Point(60, 160);
+    private static final int DAY_GRID_BOX_SIZE = 20;
     private static final int DAY_GRID_BOX_SPACING = 5;
 
     // Formatting Constants
@@ -224,6 +232,7 @@ class GraphPanel extends JPanel {
         int currentColumn = 0;  // First Week
         int daysInYear = 366;
         Date currentDay = getDateFromString("01.01.2020");
+        int currentMonth = currentDay.getMonth();
 
         // Draw Calendar
         for (int x = 0; x < daysInYear; x++) {
@@ -241,7 +250,20 @@ class GraphPanel extends JPanel {
                     DAY_GRID_START.x + (currentColumn * (DAY_GRID_BOX_SIZE + DAY_GRID_BOX_SPACING)),
                     DAY_GRID_START.y + (currentRow * (DAY_GRID_BOX_SIZE + DAY_GRID_BOX_SPACING))
             );
-            drawDayGridBox(graphics, boxLocation, dayColor);
+            boolean monthChange = false;
+            if (currentDay.getMonth() != currentMonth) {
+                currentMonth = currentDay.getMonth();
+                monthChange = true;
+            }
+            List<Date> sharedEvents = sharedEventList.stream().filter(day ->
+                    areDaysEqual(testDay, day)
+            ).collect(Collectors.toList());
+            boolean sharedEvent = sharedEvents.size() > 0;
+            List<Date> virtualEvents = virtualEventList.stream().filter(day ->
+                    areDaysEqual(testDay, day)
+            ).collect(Collectors.toList());
+            boolean virtualEvent = virtualEvents.size() > 0;
+            drawDayGridBox(graphics, boxLocation, dayColor, monthChange, sharedEvent, virtualEvent);
 
             // Update Variables
             currentDay = getDateOneDayLater(currentDay);
@@ -253,6 +275,35 @@ class GraphPanel extends JPanel {
             }
         }
 
+        // Draw Axes
+        graphics.setColor(DETAIL_COLOR);
+        graphics.setStroke(new BasicStroke(2));
+        graphics.drawLine(
+                DAY_GRID_START.x - DAY_GRID_BOX_SPACING * 2,
+                DAY_GRID_START.y,
+                DAY_GRID_START.x - DAY_GRID_BOX_SPACING * 2,
+                DAY_GRID_START.y + (7 * DAY_GRID_BOX_SIZE) + (6 * DAY_GRID_BOX_SPACING) + (2 * DAY_GRID_BOX_SPACING)
+        );
+        graphics.drawLine(
+                DAY_GRID_START.x - DAY_GRID_BOX_SPACING * 2,
+                DAY_GRID_START.y + (7 * DAY_GRID_BOX_SIZE) + (6 * DAY_GRID_BOX_SPACING) + (2 * DAY_GRID_BOX_SPACING),
+                DAY_GRID_START.x + (53 * DAY_GRID_BOX_SIZE) + (52 * DAY_GRID_BOX_SPACING),
+                DAY_GRID_START.y + (7 * DAY_GRID_BOX_SIZE) + (6 * DAY_GRID_BOX_SPACING) + (2 * DAY_GRID_BOX_SPACING)
+
+        );
+        graphics.setColor(DETAIL_COLOR);
+        graphics.setFont(new Font("Sanserif", Font.BOLD, 16));
+        int horizBase = DAY_GRID_START.x - (5 * DAY_GRID_BOX_SPACING);
+        int vertBase = DAY_GRID_START.y + (DAY_GRID_BOX_SIZE / 2) - (DAY_GRID_BOX_SPACING / 2) - 1;
+        drawCenteredString(graphics, "M", new Point(horizBase, vertBase));
+        drawCenteredString(graphics, "T", new Point(horizBase, vertBase + (DAY_GRID_BOX_SIZE + DAY_GRID_BOX_SPACING)));
+        drawCenteredString(graphics, "W", new Point(horizBase, vertBase + (2 * (DAY_GRID_BOX_SIZE + DAY_GRID_BOX_SPACING))));
+        drawCenteredString(graphics, "T", new Point(horizBase, vertBase + (3 * (DAY_GRID_BOX_SIZE + DAY_GRID_BOX_SPACING))));
+        drawCenteredString(graphics, "F", new Point(horizBase, vertBase + (4 * (DAY_GRID_BOX_SIZE + DAY_GRID_BOX_SPACING))));
+        drawCenteredString(graphics, "S", new Point(horizBase, vertBase + (5 * (DAY_GRID_BOX_SIZE + DAY_GRID_BOX_SPACING))));
+        drawCenteredString(graphics, "S", new Point(horizBase, vertBase + (6 * (DAY_GRID_BOX_SIZE + DAY_GRID_BOX_SPACING))));
+
+
         // Draw Key
         for (int x = 0; x < 8; x++) {
             if (x < 6) {
@@ -261,14 +312,14 @@ class GraphPanel extends JPanel {
                         DAY_GRID_START.x + (54 * (DAY_GRID_BOX_SIZE + DAY_GRID_BOX_SPACING)),
                         DAY_GRID_START.y + (x * (DAY_GRID_BOX_SIZE + DAY_GRID_BOX_SPACING))
                 );
-                drawDayGridBox(graphics, boxLocation, dayColor);
+                drawDayGridBox(graphics, boxLocation, dayColor, false, false, false);
             } else if (x == 7) {
                 Color dayColor = getDailyColorFromNumberEvents(x);
                 Point boxLocation = new Point(
                         DAY_GRID_START.x + (54 * (DAY_GRID_BOX_SIZE + DAY_GRID_BOX_SPACING)),
                         DAY_GRID_START.y + (6 * (DAY_GRID_BOX_SIZE + DAY_GRID_BOX_SPACING))
                 );
-                drawDayGridBox(graphics, boxLocation, dayColor);
+                drawDayGridBox(graphics, boxLocation, dayColor, false, false, false);
             }
         }
     }
@@ -456,38 +507,52 @@ class GraphPanel extends JPanel {
 
     /*--- Private UI Methods ---*/
 
-    private void drawDayGridBox(Graphics2D graphics, Point location, Color color) {
+    private void drawDayGridBox(
+            Graphics2D graphics,
+            Point location,
+            Color color,
+            boolean newMonth,
+            boolean sharedEvent,
+            boolean virtualEvent
+    ) {
+
+        // Draw Box
         graphics.setColor(color);
         graphics.fillRect(location.x, location.y, DAY_GRID_BOX_SIZE, DAY_GRID_BOX_SIZE);
-        if (color.getRed() > 250) {
-            graphics.setStroke(new BasicStroke(1));
-            graphics.setColor(new Color(220, 220, 220));
-            graphics.drawRect(location.x, location.y, DAY_GRID_BOX_SIZE, DAY_GRID_BOX_SIZE);
+
+        // Draw Details
+        if (newMonth) {
+            graphics.setColor(Color.WHITE);
+            int x[] = {location.x, location.x + (DAY_GRID_BOX_SIZE / 3), location.x};
+            int y[] = {location.y, location.y, location.y + (DAY_GRID_BOX_SIZE / 3)};
+            graphics.fillPolygon(x, y, 3);
+        }
+        if (sharedEvent) {
+            graphics.setColor(Color.WHITE);
+            graphics.fillOval(
+                    location.x + (DAY_GRID_BOX_SIZE / 4),
+                    location.y + (DAY_GRID_BOX_SIZE / 4),
+                    DAY_GRID_BOX_SIZE / 2,
+                    DAY_GRID_BOX_SIZE / 2
+            );
+        }
+        if (virtualEvent && !sharedEvent) {
+            graphics.setColor(Color.WHITE);
+            graphics.setStroke(new BasicStroke(2));
+            graphics.drawOval(
+                    location.x + (DAY_GRID_BOX_SIZE / 4) + 1,
+                    location.y + (DAY_GRID_BOX_SIZE / 4) + 1,
+                    DAY_GRID_BOX_SIZE / 2 - 2,
+                    DAY_GRID_BOX_SIZE / 2 - 2
+            );
         }
     }
 
     private Color getDailyColorFromNumberEvents(int events) {
-//        Color empty = Color.WHITE;
-//        Color middle = new Color(58, 185, 240);
-//        Color max = new Color(122, 97, 169); // 100, 190, 50
-//        Color dayColor;
-//        if (events < 3) {
-//            dayColor = lerpColor(empty, middle, events / 3.0);
-//        } else {
-//            dayColor = lerpColor(middle, max, (events - 3) / 3.0);
-//        }
-//        return dayColor;
-//        Color base = new Color(255, 255, 255);
-//        return new Color(
-//                255 - (int) (base.getRed() * (events / 7.0)),
-//                255 - (int) (base.getGreen() * (events / 7.0)),
-//                255 - (int) (base.getBlue() * (events / 7.0))
-//        );
-
         Color color;
         switch (events) {
             case 0:
-                color = Color.WHITE;
+                color = new Color(238, 238, 238);
                 break;
             case 1:
                 color = new Color(189, 231, 250);
@@ -496,21 +561,28 @@ class GraphPanel extends JPanel {
                 color = new Color(123, 208, 245);
                 break;
             case 3:
-                color = new Color(58, 185, 240);
+                color = new Color(69, 181, 230);
                 break;
             case 4:
                 color = new Color(100, 140, 200);
                 break;
             case 5:
-                color = new Color(130, 105, 180);
+                color = new Color(135, 110, 186);
                 break;
             case 7:
-                color = new Color(125, 66, 150);
+                color = new Color(172, 115, 191);
                 break;
             default:
                 color = Color.RED;
         }
         return color;
+    }
+
+    private void drawCenteredString(Graphics g, String text, Point location) {
+        FontMetrics metrics = g.getFontMetrics(g.getFont());
+        int x = location.x - (metrics.stringWidth(text) / 2);
+        int y = location.y - (metrics.getHeight() / 2) + metrics.getAscent();
+        g.drawString(text, x, y);
     }
 
     private void drawLine(Graphics2D graphics, Point start, Point end) {
