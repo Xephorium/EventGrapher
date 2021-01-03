@@ -7,6 +7,8 @@ import java.awt.*;
 import java.awt.geom.Ellipse2D;
 import java.awt.geom.Line2D;
 import java.text.DecimalFormat;
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
 import java.util.Calendar;
 import java.util.Date;
 import java.util.List;
@@ -27,10 +29,8 @@ class GraphPanel extends JPanel {
     /*--- Variable Declarations ---*/
 
     // Interface Constants
-    private static final int POINT_DIAMETER = 11;
     private static final int POINT_DIAMETER_SMALL = 5;
     private static final int POINT_OFFSET = 0;
-
 
     // Paint Constants
     private static final Color BACKGROUND_COLOR = new Color(255, 255, 255);
@@ -41,16 +41,19 @@ class GraphPanel extends JPanel {
     private static final int TEXT_LINE_SPACING = 2;
     private static final int TEXT_INDENT = 10;
     private static final int TEXT_COLUMN = 300;
+    private static final Point DAY_GRID_START = new Point(20, 160);
+    private static final int DAY_GRID_BOX_SIZE = 16;
+    private static final int DAY_GRID_BOX_SPACING = 5;
 
     // Formatting Constants
     private DecimalFormat DECIMAL_FORMAT_3 = new DecimalFormat("0.00#");
     private DecimalFormat DECIMAL_FORMAT_P = new DecimalFormat("0.#");
 
     // Data Variables
-    List<Date> fullEventList;
-    List<Date> soloEventList;
-    List<Date> sharedEventList;
-    List<Date> virtualEventList;
+    private List<Date> fullEventList;
+    private List<Date> soloEventList;
+    private List<Date> sharedEventList;
+    private List<Date> virtualEventList;
 
     // Stat Variables
     private double dailyAverageEvents;
@@ -104,6 +107,7 @@ class GraphPanel extends JPanel {
         // Draw Interface
         if (fullEventList != null && sharedEventList != null && virtualEventList != null) {
             drawTotals(graphics);
+            drawDailyEvents(graphics);
         } else {
             invalidate();
             repaint();
@@ -207,8 +211,66 @@ class GraphPanel extends JPanel {
                 WINDOW_PADDING + TEXT_COLUMN,
                 currentHeight
         );
-        currentHeight += graphics.getFontMetrics().getHeight();
-        currentHeight += TEXT_LINE_SPACING;
+    }
+
+    /* Note: Method draws a GitHub-like grid of squares, color coded to indicate
+     *       the number of events that took place on each day of the year.
+     */
+    private void drawDailyEvents(Graphics2D graphics) {
+
+        // Local Variables
+        int rows = 6;           // Days of the Week (0-6)
+        int currentRow = 2;     // 2020 Starts on Wednesday
+        int currentColumn = 0;  // First Week
+        int daysInYear = 366;
+        Date currentDay = getDateFromString("01.01.2020");
+
+        // Draw Calendar
+        for (int x = 0; x < daysInYear; x++) {
+
+            // Calculate Day Color
+            Date testDay = currentDay;
+            List<Date> dayEvents = fullEventList.stream().filter(day ->
+                    areDaysEqual(testDay, day)
+            ).collect(Collectors.toList());
+            int eventsForDay = dayEvents.size();
+            Color dayColor = getDailyColorFromNumberEvents(eventsForDay);
+
+            // Draw Box
+            Point boxLocation = new Point(
+                    DAY_GRID_START.x + (currentColumn * (DAY_GRID_BOX_SIZE + DAY_GRID_BOX_SPACING)),
+                    DAY_GRID_START.y + (currentRow * (DAY_GRID_BOX_SIZE + DAY_GRID_BOX_SPACING))
+            );
+            drawDayGridBox(graphics, boxLocation, dayColor);
+
+            // Update Variables
+            currentDay = getDateOneDayLater(currentDay);
+            if (currentRow < rows) {
+                currentRow++;
+            } else {
+                currentRow = 0;
+                currentColumn++;
+            }
+        }
+
+        // Draw Key
+        for (int x = 0; x < 8; x++) {
+            if (x < 6) {
+                Color dayColor = getDailyColorFromNumberEvents(x);
+                Point boxLocation = new Point(
+                        DAY_GRID_START.x + (54 * (DAY_GRID_BOX_SIZE + DAY_GRID_BOX_SPACING)),
+                        DAY_GRID_START.y + (x * (DAY_GRID_BOX_SIZE + DAY_GRID_BOX_SPACING))
+                );
+                drawDayGridBox(graphics, boxLocation, dayColor);
+            } else if (x == 7) {
+                Color dayColor = getDailyColorFromNumberEvents(x);
+                Point boxLocation = new Point(
+                        DAY_GRID_START.x + (54 * (DAY_GRID_BOX_SIZE + DAY_GRID_BOX_SPACING)),
+                        DAY_GRID_START.y + (6 * (DAY_GRID_BOX_SIZE + DAY_GRID_BOX_SPACING))
+                );
+                drawDayGridBox(graphics, boxLocation, dayColor);
+            }
+        }
     }
 
 
@@ -338,6 +400,13 @@ class GraphPanel extends JPanel {
         return calendar.getTime();
     }
 
+    private Date getDateOneDayLater(Date date) {
+        Calendar calendar = Calendar.getInstance();
+        calendar.setTime(date);
+        calendar.add(Calendar.DATE, 1);
+        return calendar.getTime();
+    }
+
     private Date getZeroTimeDate(Date date) {
         Calendar calendar = Calendar.getInstance();
         calendar.setTime(date);
@@ -349,28 +418,104 @@ class GraphPanel extends JPanel {
         return calendar.getTime();
     }
 
+    private Date getDateFromString(String string) {
+        Date date = new Date();
+
+        try {
+            date = (new SimpleDateFormat("MM.dd.yyyy")).parse(string);
+        } catch (ParseException exception) {
+            System.out.println("Error: Couldn't parse string date.");
+            System.exit(1);
+        }
+
+        return date;
+    }
+
     private int truncateDecimals(double number) {
         String value = "" + number;
         String newValue = value.replaceFirst("\\..*$", "");
         return Integer.valueOf(newValue);
     }
 
+    private int lerp(int a, int b, double f) {
+        return truncateDecimals((a * (1f - f)) + (b * f));
+    }
+
+    public int clamp(int val, int min, int max) {
+        return Math.max(min, Math.min(max, val));
+    }
+
+    private Color lerpColor(Color a, Color b, double factor) {
+        return new Color(
+                clamp(lerp(a.getRed(), b.getRed(), factor), 0, 255),
+                clamp(lerp(a.getGreen(), b.getGreen(), factor), 0, 255),
+                clamp(lerp(a.getBlue(), b.getBlue(), factor), 0, 255)
+        );
+    }
+
 
     /*--- Private UI Methods ---*/
+
+    private void drawDayGridBox(Graphics2D graphics, Point location, Color color) {
+        graphics.setColor(color);
+        graphics.fillRect(location.x, location.y, DAY_GRID_BOX_SIZE, DAY_GRID_BOX_SIZE);
+        if (color.getRed() > 250) {
+            graphics.setStroke(new BasicStroke(1));
+            graphics.setColor(new Color(220, 220, 220));
+            graphics.drawRect(location.x, location.y, DAY_GRID_BOX_SIZE, DAY_GRID_BOX_SIZE);
+        }
+    }
+
+    private Color getDailyColorFromNumberEvents(int events) {
+//        Color empty = Color.WHITE;
+//        Color middle = new Color(58, 185, 240);
+//        Color max = new Color(122, 97, 169); // 100, 190, 50
+//        Color dayColor;
+//        if (events < 3) {
+//            dayColor = lerpColor(empty, middle, events / 3.0);
+//        } else {
+//            dayColor = lerpColor(middle, max, (events - 3) / 3.0);
+//        }
+//        return dayColor;
+//        Color base = new Color(255, 255, 255);
+//        return new Color(
+//                255 - (int) (base.getRed() * (events / 7.0)),
+//                255 - (int) (base.getGreen() * (events / 7.0)),
+//                255 - (int) (base.getBlue() * (events / 7.0))
+//        );
+
+        Color color;
+        switch (events) {
+            case 0:
+                color = Color.WHITE;
+                break;
+            case 1:
+                color = new Color(189, 231, 250);
+                break;
+            case 2:
+                color = new Color(123, 208, 245);
+                break;
+            case 3:
+                color = new Color(58, 185, 240);
+                break;
+            case 4:
+                color = new Color(100, 140, 200);
+                break;
+            case 5:
+                color = new Color(130, 105, 180);
+                break;
+            case 7:
+                color = new Color(125, 66, 150);
+                break;
+            default:
+                color = Color.RED;
+        }
+        return color;
+    }
 
     private void drawLine(Graphics2D graphics, Point start, Point end) {
         Line2D line = new Line2D.Float(start.x, start.y, end.x, end.y);
         graphics.draw(line);
-    }
-
-    private void drawPoint(Graphics2D graphics, Point point) {
-        Ellipse2D.Double circle = new Ellipse2D.Double(
-                point.x - (POINT_DIAMETER / 2) + POINT_OFFSET,
-                point.y - (POINT_DIAMETER / 2) + POINT_OFFSET,
-                POINT_DIAMETER,
-                POINT_DIAMETER
-        );
-        graphics.fill(circle);
     }
 
     private void drawSmallPoint(Graphics2D graphics, Point point) {
