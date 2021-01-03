@@ -43,13 +43,13 @@ class GraphPanel extends JPanel {
     private static final Color BACKGROUND_COLOR = new Color(255, 255, 255);
     private static final Color TEXT_COLOR_PRIMARY = new Color(0, 0, 0);
     private static final Color TEXT_COLOR_SECONDARY = new Color(80, 80, 80);
-    private static final Color DETAIL_COLOR = new Color(69, 181, 230);
+    private static final Color DETAIL_COLOR = getDailyColorFromNumberEvents(4);
     private static final int WINDOW_PADDING = 15;
     private static final int TEXT_SIZE = 15;
     private static final int TEXT_LINE_SPACING = 2;
     private static final int TEXT_INDENT = 10;
     private static final int TEXT_COLUMN = 300;
-    private static final Point DAY_GRID_START = new Point(60, 160);
+    private static final Point DAY_GRID_START = new Point(70, 170);
     private static final int DAY_GRID_BOX_SIZE = 20;
     private static final int DAY_GRID_BOX_SPACING = 5;
 
@@ -277,7 +277,7 @@ class GraphPanel extends JPanel {
 
         // Draw Axes
         graphics.setColor(DETAIL_COLOR);
-        graphics.setStroke(new BasicStroke(2));
+        graphics.setStroke(new BasicStroke(1));
         graphics.drawLine(
                 DAY_GRID_START.x - DAY_GRID_BOX_SPACING * 2,
                 DAY_GRID_START.y,
@@ -291,37 +291,59 @@ class GraphPanel extends JPanel {
                 DAY_GRID_START.y + (7 * DAY_GRID_BOX_SIZE) + (6 * DAY_GRID_BOX_SPACING) + (2 * DAY_GRID_BOX_SPACING)
 
         );
+
+        // Draw Labels
         graphics.setColor(DETAIL_COLOR);
         graphics.setFont(new Font("Sanserif", Font.BOLD, 16));
         int horizBase = DAY_GRID_START.x - (5 * DAY_GRID_BOX_SPACING);
         int vertBase = DAY_GRID_START.y + (DAY_GRID_BOX_SIZE / 2) - (DAY_GRID_BOX_SPACING / 2) - 1;
-        drawCenteredString(graphics, "M", new Point(horizBase, vertBase));
-        drawCenteredString(graphics, "T", new Point(horizBase, vertBase + (DAY_GRID_BOX_SIZE + DAY_GRID_BOX_SPACING)));
-        drawCenteredString(graphics, "W", new Point(horizBase, vertBase + (2 * (DAY_GRID_BOX_SIZE + DAY_GRID_BOX_SPACING))));
-        drawCenteredString(graphics, "T", new Point(horizBase, vertBase + (3 * (DAY_GRID_BOX_SIZE + DAY_GRID_BOX_SPACING))));
-        drawCenteredString(graphics, "F", new Point(horizBase, vertBase + (4 * (DAY_GRID_BOX_SIZE + DAY_GRID_BOX_SPACING))));
-        drawCenteredString(graphics, "S", new Point(horizBase, vertBase + (5 * (DAY_GRID_BOX_SIZE + DAY_GRID_BOX_SPACING))));
-        drawCenteredString(graphics, "S", new Point(horizBase, vertBase + (6 * (DAY_GRID_BOX_SIZE + DAY_GRID_BOX_SPACING))));
+        String[] days = {"M", "T", "W", "T", "F", "S", "S"};
+        for (int x = 0; x < 7; x++)
+            drawCenteredString(graphics, days[x],
+                    new Point(horizBase, vertBase + (x * (DAY_GRID_BOX_SIZE + DAY_GRID_BOX_SPACING))));
+        graphics.setColor(DETAIL_COLOR);
+        graphics.setFont(new Font("Sanserif", Font.BOLD, 16));
+        horizBase = DAY_GRID_START.x + 40;
+        vertBase = DAY_GRID_START.y + (7 * DAY_GRID_BOX_SIZE) + (6 * DAY_GRID_BOX_SPACING) + 26;
+        int horizOffset = 112;
+        String[] months = {"Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"};
+        for (int x = 0; x < 12; x++)
+            drawCenteredString(graphics, months[x], new Point(horizBase + (x * horizOffset), vertBase));
 
 
         // Draw Key
+        graphics.setFont(new Font("Sanserif", Font.ITALIC, 16));
+        horizBase = DAY_GRID_START.x + 250;
+        vertBase = DAY_GRID_START.y + 250;
+        horizOffset = 62;
         for (int x = 0; x < 8; x++) {
             if (x < 6) {
                 Color dayColor = getDailyColorFromNumberEvents(x);
-                Point boxLocation = new Point(
-                        DAY_GRID_START.x + (54 * (DAY_GRID_BOX_SIZE + DAY_GRID_BOX_SPACING)),
-                        DAY_GRID_START.y + (x * (DAY_GRID_BOX_SIZE + DAY_GRID_BOX_SPACING))
-                );
+                Point boxLocation = new Point(horizBase + (x * horizOffset), vertBase);
                 drawDayGridBox(graphics, boxLocation, dayColor, false, false, false);
+                graphics.setColor(DETAIL_COLOR);
+                drawCenteredString(graphics, "" + x, new Point(horizBase + (x * horizOffset) + 34, vertBase + (DAY_GRID_BOX_SIZE / 2) - 1));
             } else if (x == 7) {
                 Color dayColor = getDailyColorFromNumberEvents(x);
-                Point boxLocation = new Point(
-                        DAY_GRID_START.x + (54 * (DAY_GRID_BOX_SIZE + DAY_GRID_BOX_SPACING)),
-                        DAY_GRID_START.y + (6 * (DAY_GRID_BOX_SIZE + DAY_GRID_BOX_SPACING))
-                );
+                Point boxLocation = new Point(horizBase + ((x - 1) * horizOffset), vertBase);
                 drawDayGridBox(graphics, boxLocation, dayColor, false, false, false);
+                graphics.setColor(DETAIL_COLOR);
+                drawCenteredString(graphics, "" + x, new Point(horizBase + ((x - 1) * horizOffset) + 34, vertBase + (DAY_GRID_BOX_SIZE / 2) - 1));
             }
         }
+        Color dayColor = DETAIL_COLOR;
+        Point boxLocation = new Point(horizBase + (7 * horizOffset), vertBase);
+        drawDayGridBox(graphics, boxLocation, dayColor, true, false, false);
+        graphics.setColor(DETAIL_COLOR);
+        drawCenteredString(graphics, "New Month", new Point(horizBase + (7 * horizOffset) + 71, vertBase + (DAY_GRID_BOX_SIZE / 2) - 1));
+        boxLocation = new Point(horizBase + (8 * horizOffset) + 79, vertBase);
+        drawDayGridBox(graphics, boxLocation, dayColor, false, true, false);
+        graphics.setColor(DETAIL_COLOR);
+        drawCenteredString(graphics, "Shared", new Point(horizBase + (8 * horizOffset) + 134, vertBase + (DAY_GRID_BOX_SIZE / 2) - 1));
+        boxLocation = new Point(horizBase + (9 * horizOffset) + 125, vertBase);
+        drawDayGridBox(graphics, boxLocation, dayColor, false, false, true);
+        graphics.setColor(DETAIL_COLOR);
+        drawCenteredString(graphics, "Virtual", new Point(horizBase + (9 * horizOffset) + 177, vertBase + (DAY_GRID_BOX_SIZE / 2) - 1));
     }
 
 
@@ -548,7 +570,7 @@ class GraphPanel extends JPanel {
         }
     }
 
-    private Color getDailyColorFromNumberEvents(int events) {
+    private static Color getDailyColorFromNumberEvents(int events) {
         Color color;
         switch (events) {
             case 0:
