@@ -288,34 +288,46 @@ class GraphPanel extends JPanel {
         }
 
         // Draw Axes
-        graphics.setColor(DETAIL_COLOR);
+        int dist = 2; // Distance From Grid
+        graphics.setColor(THEME_COLORS[4]);
         graphics.setStroke(new BasicStroke(1));
         graphics.drawLine(
-                DAY_GRID_START.x - DAY_GRID_BOX_SPACING * 3,
-                DAY_GRID_START.y,
-                DAY_GRID_START.x - DAY_GRID_BOX_SPACING * 3,
-                DAY_GRID_START.y + (7 * DAY_GRID_BOX_SIZE) + (6 * DAY_GRID_BOX_SPACING) + (3 * DAY_GRID_BOX_SPACING)
+                DAY_GRID_START.x - DAY_GRID_BOX_SPACING * dist,
+                DAY_GRID_START.y - DAY_GRID_BOX_SPACING * dist,
+                DAY_GRID_START.x - DAY_GRID_BOX_SPACING * dist,
+                DAY_GRID_START.y + (7 * DAY_GRID_BOX_SIZE) + (6 * DAY_GRID_BOX_SPACING) + (dist * DAY_GRID_BOX_SPACING)
         );
         graphics.drawLine(
-                DAY_GRID_START.x - DAY_GRID_BOX_SPACING * 3,
-                DAY_GRID_START.y + (7 * DAY_GRID_BOX_SIZE) + (6 * DAY_GRID_BOX_SPACING) + (3 * DAY_GRID_BOX_SPACING),
-                DAY_GRID_START.x + (53 * DAY_GRID_BOX_SIZE) + (52 * DAY_GRID_BOX_SPACING),
-                DAY_GRID_START.y + (7 * DAY_GRID_BOX_SIZE) + (6 * DAY_GRID_BOX_SPACING) + (3 * DAY_GRID_BOX_SPACING)
-
+                DAY_GRID_START.x - DAY_GRID_BOX_SPACING * dist,
+                DAY_GRID_START.y + (7 * DAY_GRID_BOX_SIZE) + (6 * DAY_GRID_BOX_SPACING) + (dist * DAY_GRID_BOX_SPACING),
+                DAY_GRID_START.x + (53 * DAY_GRID_BOX_SIZE) + (52 * DAY_GRID_BOX_SPACING) + (DAY_GRID_BOX_SPACING * dist),
+                DAY_GRID_START.y + (7 * DAY_GRID_BOX_SIZE) + (6 * DAY_GRID_BOX_SPACING) + (dist * DAY_GRID_BOX_SPACING)
+        );
+        graphics.drawLine(
+                DAY_GRID_START.x - DAY_GRID_BOX_SPACING * dist,
+                DAY_GRID_START.y - DAY_GRID_BOX_SPACING * dist,
+                DAY_GRID_START.x + (53 * DAY_GRID_BOX_SIZE) + (52 * DAY_GRID_BOX_SPACING) + (DAY_GRID_BOX_SPACING * dist),
+                DAY_GRID_START.y - DAY_GRID_BOX_SPACING * dist
+        );
+        graphics.drawLine(
+                DAY_GRID_START.x + (53 * DAY_GRID_BOX_SIZE) + (52 * DAY_GRID_BOX_SPACING) + (DAY_GRID_BOX_SPACING * dist),
+                DAY_GRID_START.y - DAY_GRID_BOX_SPACING * dist,
+                DAY_GRID_START.x + (53 * DAY_GRID_BOX_SIZE) + (52 * DAY_GRID_BOX_SPACING) + (DAY_GRID_BOX_SPACING * dist),
+                DAY_GRID_START.y + (7 * DAY_GRID_BOX_SIZE) + (6 * DAY_GRID_BOX_SPACING) + (dist * DAY_GRID_BOX_SPACING)
         );
 
         // Draw Labels
         graphics.setColor(DETAIL_COLOR);
-        graphics.setFont(new Font("Sanserif", Font.PLAIN, 16));
-        int horizBase = DAY_GRID_START.x - (7 * DAY_GRID_BOX_SPACING);
+        graphics.setFont(new Font("Sanserif", Font.BOLD, 16));
+        int horizBase = DAY_GRID_START.x - (8 * DAY_GRID_BOX_SPACING);
         int vertBase = DAY_GRID_START.y + (DAY_GRID_BOX_SIZE / 2) - (DAY_GRID_BOX_SPACING / 2) - 1;
         String[] days = {"M", "T", "W", "T", "F", "S", "S"};
         for (int x = 0; x < 7; x++)
             drawCenteredString(graphics, days[x],
                     new Point(horizBase, vertBase + (x * (DAY_GRID_BOX_SIZE + DAY_GRID_BOX_SPACING))));
         graphics.setColor(DETAIL_COLOR);
-        graphics.setFont(new Font("Sanserif", Font.PLAIN, 16));
-        horizBase = DAY_GRID_START.x + 40;
+        graphics.setFont(new Font("Sanserif", Font.BOLD, 16));
+        horizBase = DAY_GRID_START.x + 42;
         vertBase = DAY_GRID_START.y + (7 * DAY_GRID_BOX_SIZE) + (6 * DAY_GRID_BOX_SPACING) + 28;
         int horizOffset = 112;
         String[] months = {"Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"};
@@ -324,7 +336,7 @@ class GraphPanel extends JPanel {
 
 
         // Draw Color Key
-        graphics.setFont(new Font("Sanserif", Font.ITALIC, 16));
+        graphics.setFont(new Font("Sanserif", Font.BOLD | Font.ITALIC, 16));
         horizBase = DAY_GRID_START.x + (54 * (DAY_GRID_BOX_SIZE + DAY_GRID_BOX_SPACING));
         vertBase = DAY_GRID_START.y;
         for (int x = 0; x < 8; x++) {
@@ -556,6 +568,8 @@ class GraphPanel extends JPanel {
         graphics.fillRect(location.x, location.y, DAY_GRID_BOX_SIZE, DAY_GRID_BOX_SIZE); //, 2, 2);
 
         // Draw Details
+        int offset = 6;
+        int size = 8;
         if (newMonth) {
             int b = 0; // border
             int w = 6; // width of marker
@@ -565,22 +579,35 @@ class GraphPanel extends JPanel {
             graphics.fillPolygon(x1, y1, 3);
         }
         if (sharedEvent) {
-            graphics.setColor(BACKGROUND_COLOR);
+            graphics.setColor(THEME_COLORS[5]);
             graphics.fillOval(
-                    location.x + (DAY_GRID_BOX_SIZE / 4),
-                    location.y + (DAY_GRID_BOX_SIZE / 4),
-                    DAY_GRID_BOX_SIZE / 2,
-                    DAY_GRID_BOX_SIZE / 2
+                    location.x + offset - 1,
+                    location.y + offset - 1,
+                    size + 2,
+                    size + 2
+            );
+            graphics.setColor(new Color(133, 255, 89));
+            graphics.fillOval(
+                    location.x + offset,
+                    location.y + offset,
+                    size,
+                    size
             );
         }
         if (virtualEvent && !sharedEvent) {
-            graphics.setColor(BACKGROUND_COLOR);
-            graphics.setStroke(new BasicStroke(2));
-            graphics.drawOval(
-                    location.x + (DAY_GRID_BOX_SIZE / 4) + 1,
-                    location.y + (DAY_GRID_BOX_SIZE / 4) + 1,
-                    DAY_GRID_BOX_SIZE / 2 - 2,
-                    DAY_GRID_BOX_SIZE / 2 - 2
+            graphics.setColor(THEME_COLORS[5]);
+            graphics.fillOval(
+                    location.x + offset - 1,
+                    location.y + offset - 1,
+                    size + 2,
+                    size + 2
+            );
+            graphics.setColor(Color.white);
+            graphics.fillOval(
+                    location.x + offset,
+                    location.y + offset,
+                    size,
+                    size
             );
         }
     }
