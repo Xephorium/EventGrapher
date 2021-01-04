@@ -359,13 +359,13 @@ class GraphPanel extends JPanel {
         // Draw Icon Key
         Point boxLocation = new Point(570, 425);
         int textLocationX;
-        int spaceBeforeText = 10;
-        int spaceAfterText = 30;
+        int spaceAfterText = 20;
         String[] labels = {"New Month", "Shared", "Virtual"};
         for (int x = 0; x < 3; x++) {
-            drawDayGridBox(graphics, boxLocation, DETAIL_COLOR, x == 0, x == 1, x == 2);
+            boolean isFirst = x == 0;
+            drawDayGridBox(graphics, boxLocation, isFirst ? THEME_COLORS[5] : BACKGROUND_COLOR, x == 0, x == 1, x == 2);
             graphics.setColor(DETAIL_COLOR);
-            textLocationX = boxLocation.x + DAY_GRID_BOX_SIZE + (getTextWidth(graphics, labels[x]) / 2) + spaceBeforeText;
+            textLocationX = boxLocation.x + DAY_GRID_BOX_SIZE + (getTextWidth(graphics, labels[x]) / 2) + (isFirst ? 10 : 2);
             drawCenteredString(graphics, labels[x], new Point(textLocationX, boxLocation.y + (DAY_GRID_BOX_SIZE / 2) - 1));
             boxLocation = new Point(textLocationX + (getTextWidth(graphics, labels[x]) / 2) + spaceAfterText, boxLocation.y);
         }
@@ -571,22 +571,23 @@ class GraphPanel extends JPanel {
         int offset = 6;
         int size = 8;
         if (newMonth) {
-//            int b = 0; // border
-//            int w = 6; // width of marker
-//            graphics.setColor(BACKGROUND_COLOR);
-//            int x1[] = {location.x + DAY_GRID_BOX_SIZE - b, location.x + DAY_GRID_BOX_SIZE - w, location.x + DAY_GRID_BOX_SIZE - b};
-//            int y1[] = {location.y + b, location.y + b, location.y + w};
-//            graphics.fillPolygon(x1, y1, 3);
+            graphics.setColor(BACKGROUND_COLOR);
+            graphics.fillOval(
+                    location.x + 2,
+                    location.y + 2,
+                    3,
+                    3
+            );
         }
-        if (sharedEvent) {
-            graphics.setColor(THEME_COLORS[5]);
+        if (virtualEvent && !sharedEvent) {
+            graphics.setColor(THEME_COLORS[6]);
             graphics.fillOval(
                     location.x + offset - 1,
                     location.y + offset - 1,
                     size + 2,
                     size + 2
             );
-            graphics.setColor(new Color(133, 255, 89));
+            graphics.setColor(new Color(255, 255, 255));
             graphics.fillOval(
                     location.x + offset,
                     location.y + offset,
@@ -594,15 +595,15 @@ class GraphPanel extends JPanel {
                     size
             );
         }
-        if (virtualEvent && !sharedEvent) {
-            graphics.setColor(THEME_COLORS[5]);
+        if (sharedEvent) {
+            graphics.setColor(THEME_COLORS[6]);
             graphics.fillOval(
                     location.x + offset - 1,
                     location.y + offset - 1,
                     size + 2,
                     size + 2
             );
-            graphics.setColor(Color.white);
+            graphics.setColor(THEME_COLORS[6]);
             graphics.fillOval(
                     location.x + offset,
                     location.y + offset,
