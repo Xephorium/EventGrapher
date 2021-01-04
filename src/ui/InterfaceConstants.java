@@ -10,5 +10,5 @@ package ui;
 public class InterfaceConstants {
 
     public static final int WINDOW_WIDTH = 1500;
-    public static final int WINDOW_HEIGHT = 800;
+    public static final int WINDOW_HEIGHT = 900;
 }
