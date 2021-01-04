@@ -571,12 +571,12 @@ class GraphPanel extends JPanel {
         int offset = 6;
         int size = 8;
         if (newMonth) {
-            int b = 0; // border
-            int w = 6; // width of marker
-            graphics.setColor(BACKGROUND_COLOR);
-            int x1[] = {location.x + b, location.x + w, location.x + b};
-            int y1[] = {location.y + b, location.y + b, location.y + w};
-            graphics.fillPolygon(x1, y1, 3);
+//            int b = 0; // border
+//            int w = 6; // width of marker
+//            graphics.setColor(BACKGROUND_COLOR);
+//            int x1[] = {location.x + DAY_GRID_BOX_SIZE - b, location.x + DAY_GRID_BOX_SIZE - w, location.x + DAY_GRID_BOX_SIZE - b};
+//            int y1[] = {location.y + b, location.y + b, location.y + w};
+//            graphics.fillPolygon(x1, y1, 3);
         }
         if (sharedEvent) {
             graphics.setColor(THEME_COLORS[5]);
