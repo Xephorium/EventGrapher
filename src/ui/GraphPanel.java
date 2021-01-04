@@ -386,7 +386,7 @@ class GraphPanel extends JPanel {
         int hours = 23;
         int currentNumericHour = 0;
         int currentDay = 0;
-        Date currentHour = new Date("01/06/22020");
+        Date currentHour = new Date("01/06/2020");
 
         // Determine Maximum Event Hour
         int maxEvents = 0;
