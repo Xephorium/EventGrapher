@@ -130,6 +130,7 @@ class GraphPanel extends JPanel {
         if (fullEventList != null && sharedEventList != null && virtualEventList != null) {
             drawTotals(graphics);
             drawDailyEvents(graphics);
+            drawHourlyEvents(graphics);
         } else {
             invalidate();
             repaint();
@@ -371,6 +372,73 @@ class GraphPanel extends JPanel {
         }
     }
 
+    /* Note: Method draws a grid of rectangles, color coded to indicate
+     *       the number of events that took place on each hour of the week.
+     */
+    private void drawHourlyEvents(Graphics2D graphics) {
+
+        // Local Variables
+        int HOURLY_POSITION_X = 120;
+        int HOURLY_POSITION_Y = 490;
+        int HOUR_WIDTH = 40;
+        int HOUR_HEIGHT = 11;
+        int HOUR_SPACE = 2;
+        int hours = 23;
+        int currentNumericHour = 0;
+        int currentDay = 0;
+        Date currentHour = new Date("01/06/22020");
+
+        // Determine Maximum Event Hour
+        int maxEvents = 0;
+        for (int x = 0; x < (24 * 7); x++) {
+
+            // Find Matching Hours
+            Date hour = currentHour;
+            List<Date> hourlyEvents = fullEventList.stream().filter(event ->
+                    areEventsSameWeeklyHour(hour, event)
+            ).collect(Collectors.toList());
+
+            if (hourlyEvents.size() > maxEvents) {
+                maxEvents = hourlyEvents.size();
+            }
+
+            // Advance State Variables
+            currentHour = getDateOneHourLater(currentHour);
+        }
+
+        // Draw Grid
+        for (int x = 0; x < (24 * 7); x++) {
+
+            // Find Matching Hours
+            Date hour = currentHour;
+            List<Date> hourlyEvents = fullEventList.stream().filter(event ->
+                    areEventsSameWeeklyHour(hour, event)
+            ).collect(Collectors.toList());
+
+            // Prepare To Draw Box
+            double colorPercent = hourlyEvents.size() / (double) maxEvents;
+            Color color = lerpColor(THEME_COLORS[0], THEME_COLORS[3], colorPercent);
+
+            // Draw Box
+            graphics.setColor(color);
+            graphics.fillRect(
+                    HOURLY_POSITION_X + (currentDay * (HOUR_WIDTH + HOUR_SPACE)),
+                    HOURLY_POSITION_Y + (currentNumericHour * (HOUR_HEIGHT + HOUR_SPACE)),
+                    HOUR_WIDTH,
+                    HOUR_HEIGHT
+            );
+
+            // Advance State Variables
+            currentHour = getDateOneHourLater(currentHour);
+            if (currentNumericHour == hours) {
+                currentDay++;
+                currentNumericHour = 0;
+            } else {
+                currentNumericHour++;
+            }
+        }
+    }
+
 
     /*--- Private Formatting Methods ---*/
 
@@ -491,6 +559,10 @@ class GraphPanel extends JPanel {
         return newDate1.compareTo(newDate2) == 0;
     }
 
+    private boolean areEventsSameWeeklyHour(Date d1, Date d2) {
+        return d1.getDay() == d2.getDay() && d1.getHours() == d2.getHours();
+    }
+
     private Date getDateOneWeekLater(Date date) {
         Calendar calendar = Calendar.getInstance();
         calendar.setTime(date);
@@ -502,6 +574,13 @@ class GraphPanel extends JPanel {
         Calendar calendar = Calendar.getInstance();
         calendar.setTime(date);
         calendar.add(Calendar.DATE, 1);
+        return calendar.getTime();
+    }
+
+    private Date getDateOneHourLater(Date date) {
+        Calendar calendar = Calendar.getInstance();
+        calendar.setTime(date);
+        calendar.add(Calendar.HOUR, 1);
         return calendar.getTime();
     }
 
