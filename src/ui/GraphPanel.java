@@ -325,40 +325,38 @@ class GraphPanel extends JPanel {
 
         // Draw Color Key
         graphics.setFont(new Font("Sanserif", Font.ITALIC, 16));
-        horizBase = DAY_GRID_START.x + 400;
-        vertBase = DAY_GRID_START.y + 240;
-        horizOffset = DAY_GRID_BOX_SIZE + DAY_GRID_BOX_SPACING;
+        horizBase = DAY_GRID_START.x + (54 * (DAY_GRID_BOX_SIZE + DAY_GRID_BOX_SPACING));
+        vertBase = DAY_GRID_START.y;
         for (int x = 0; x < 8; x++) {
             if (x < 6) {
                 Color dayColor = getDailyColorFromNumberEvents(x);
-                Point boxLocation = new Point(horizBase + (x * horizOffset), vertBase);
+                Point boxLocation = new Point(horizBase, vertBase + (x * (DAY_GRID_BOX_SIZE + DAY_GRID_BOX_SPACING)));
                 drawDayGridBox(graphics, boxLocation, dayColor, false, false, false);
                 if (x < 3) graphics.setColor(THEME_COLORS[6]);
                 else graphics.setColor(BACKGROUND_COLOR);
-                drawCenteredString(graphics, "" + x, new Point(horizBase + (x * horizOffset) + 9, vertBase + (DAY_GRID_BOX_SIZE / 2) - 1));
+                drawCenteredString(graphics, "" + x, new Point(boxLocation.x + (DAY_GRID_BOX_SIZE / 2) - 1, boxLocation.y + (DAY_GRID_BOX_SIZE / 2) - 1));
             } else if (x == 7) {
                 Color dayColor = getDailyColorFromNumberEvents(x);
-                Point boxLocation = new Point(horizBase + ((x - 1) * horizOffset), vertBase);
+                Point boxLocation = new Point(horizBase, vertBase + ((x - 1) * (DAY_GRID_BOX_SIZE + DAY_GRID_BOX_SPACING)));
                 drawDayGridBox(graphics, boxLocation, dayColor, false, false, false);
                 graphics.setColor(BACKGROUND_COLOR);
-                drawCenteredString(graphics, "" + x, new Point(horizBase + ((x - 1) * horizOffset) + 9, vertBase + (DAY_GRID_BOX_SIZE / 2) - 1));
+                drawCenteredString(graphics, "" + x, new Point(boxLocation.x + (DAY_GRID_BOX_SIZE / 2) - 1, boxLocation.y + (DAY_GRID_BOX_SIZE / 2) - 1));
             }
         }
 
         // Draw Icon Key
-        Color dayColor = DETAIL_COLOR;
-        Point boxLocation = new Point(horizBase + (8 * horizOffset), vertBase);
-        drawDayGridBox(graphics, boxLocation, dayColor, true, false, false);
-        graphics.setColor(DETAIL_COLOR);
-        drawCenteredString(graphics, "New Month", new Point(horizBase + (7 * horizOffset) + 91, vertBase + (DAY_GRID_BOX_SIZE / 2) - 1));
-        boxLocation = new Point(horizBase + (9 * horizOffset) + 99, vertBase);
-        drawDayGridBox(graphics, boxLocation, dayColor, false, true, false);
-        graphics.setColor(DETAIL_COLOR);
-        drawCenteredString(graphics, "Shared", new Point(horizBase + (8 * horizOffset) + 175, vertBase + (DAY_GRID_BOX_SIZE / 2) - 1));
-        boxLocation = new Point(horizBase + (10 * horizOffset) + 168, vertBase);
-        drawDayGridBox(graphics, boxLocation, dayColor, false, false, true);
-        graphics.setColor(DETAIL_COLOR);
-        drawCenteredString(graphics, "Virtual", new Point(horizBase + (9 * horizOffset) + 241, vertBase + (DAY_GRID_BOX_SIZE / 2) - 1));
+        Point boxLocation = new Point(570, 425);
+        int textLocationX;
+        int spaceBeforeText = 10;
+        int spaceAfterText = 30;
+        String[] labels = {"New Month", "Shared", "Virtual"};
+        for (int x = 0; x < 3; x++) {
+            drawDayGridBox(graphics, boxLocation, DETAIL_COLOR, x == 0, x == 1, x == 2);
+            graphics.setColor(DETAIL_COLOR);
+            textLocationX = boxLocation.x + DAY_GRID_BOX_SIZE + (getTextWidth(graphics, labels[x]) / 2) + spaceBeforeText;
+            drawCenteredString(graphics, labels[x], new Point(textLocationX, boxLocation.y + (DAY_GRID_BOX_SIZE / 2) - 1));
+            boxLocation = new Point(textLocationX + (getTextWidth(graphics, labels[x]) / 2) + spaceAfterText, boxLocation.y);
+        }
     }
 
 
@@ -622,6 +620,11 @@ class GraphPanel extends JPanel {
         int x = location.x - (metrics.stringWidth(text) / 2);
         int y = location.y - (metrics.getHeight() / 2) + metrics.getAscent();
         g.drawString(text, x, y);
+    }
+
+    private int getTextWidth(Graphics2D g, String text) {
+        FontMetrics metrics = g.getFontMetrics(g.getFont());
+        return metrics.stringWidth(text);
     }
 
     private void drawLine(Graphics2D graphics, Point start, Point end) {
