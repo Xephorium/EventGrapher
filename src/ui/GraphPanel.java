@@ -61,7 +61,6 @@ class GraphPanel extends JPanel {
     private static final int WINDOW_PADDING = 15;
     private static final int TEXT_SIZE = 15;
     private static final int TEXT_LINE_SPACING = 1;
-    private static final int TEXT_INDENT = 10;
     private static final Point DAY_GRID_START = new Point(75, 190);
     private static final int DAY_GRID_BOX_SIZE = 21;
     private static final int DAY_GRID_BOX_SPACING = 4;
@@ -165,6 +164,11 @@ class GraphPanel extends JPanel {
         currentHeight += 20;
         infoBaseHeight = currentHeight;
 
+        int offset1 = -360;
+        int offset2 = -10;
+        int offset3 = 200;
+        int offset4 = 615;
+
         // Events
         graphics.setColor(TEXT_COLOR_SECONDARY);
         graphics.setFont(new Font("Sanserif", Font.BOLD, TEXT_SIZE - 1));
@@ -172,7 +176,7 @@ class GraphPanel extends JPanel {
                 "Total: " + fullEventList.size()
                         + "  (Avg: " + format3(dailyAverageEvents)
                         + "/day, " + format3(weeklyAverageEvents) + "/week)",
-                horizBase + TEXT_INDENT - 300,
+                horizBase + offset1,
                 currentHeight
         );
         currentHeight += graphics.getFontMetrics().getHeight();
@@ -181,7 +185,7 @@ class GraphPanel extends JPanel {
         // Solo Events
         graphics.drawString(
                 "Solo: " + soloEventList.size() + "  (" + formatP(soloEventPercent) + "%)",
-                horizBase + TEXT_INDENT - 300,
+                horizBase + offset1,
                 currentHeight
         );
         currentHeight = infoBaseHeight;
@@ -189,7 +193,7 @@ class GraphPanel extends JPanel {
         // Shared Events
         graphics.drawString(
                 "Shared: " + sharedEventList.size() + "  (" + formatP(sharedEventPercent) + "%)",
-                horizBase + TEXT_INDENT,
+                horizBase + offset2,
                 currentHeight
         );
         currentHeight += graphics.getFontMetrics().getHeight();
@@ -198,7 +202,7 @@ class GraphPanel extends JPanel {
         // Virtual Events
         graphics.drawString(
                 "Virtual: " + virtualEventList.size() + "  (" + formatP(virtualEventPercent) + "%)",
-                horizBase + TEXT_INDENT,
+                horizBase + offset2,
                 currentHeight
         );
         currentHeight = infoBaseHeight;
@@ -207,7 +211,7 @@ class GraphPanel extends JPanel {
         graphics.setColor(TEXT_COLOR_SECONDARY);
         graphics.drawString(
                 "Peak Day: " + peakDay,
-                horizBase + 170,
+                horizBase + offset3,
                 currentHeight
         );
         currentHeight += graphics.getFontMetrics().getHeight();
@@ -217,7 +221,7 @@ class GraphPanel extends JPanel {
         graphics.setColor(TEXT_COLOR_SECONDARY);
         graphics.drawString(
                 "Peak Week: " + peakWeek,
-                horizBase + 170,
+                horizBase + offset3,
                 currentHeight
         );
         currentHeight = infoBaseHeight;
@@ -226,7 +230,7 @@ class GraphPanel extends JPanel {
         graphics.setColor(TEXT_COLOR_SECONDARY);
         graphics.drawString(
                 "Longest Gap: " + longestGap,
-                horizBase + 535,
+                horizBase + offset4,
                 currentHeight
         );
         currentHeight += graphics.getFontMetrics().getHeight();
@@ -236,7 +240,7 @@ class GraphPanel extends JPanel {
         graphics.setColor(TEXT_COLOR_SECONDARY);
         graphics.drawString(
                 "Shortest Gap: " + shortestGap,
-                horizBase + 535,
+                horizBase + offset4,
                 currentHeight
         );
     }
