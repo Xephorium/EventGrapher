@@ -55,7 +55,7 @@ class GraphPanel extends JPanel {
     private static final Color BACKGROUND_COLOR = new Color(255, 255, 255);
     private static final Color DETAIL_COLOR = THEME_COLORS[4];
     private static final Color TEXT_COLOR_PRIMARY = THEME_COLORS[6];
-    private static final Color TEXT_COLOR_SECONDARY = DETAIL_COLOR;
+    private static final Color TEXT_COLOR_SECONDARY = THEME_COLORS[5];
 
     // Paint Constants
     private static final int WINDOW_PADDING = 15;
