@@ -42,7 +42,7 @@ class GraphPanel extends JPanel {
 
     // Color Constants
     private static final Color[] THEME_COLORS = {
-            new Color(236, 236, 236),
+            new Color(240, 240, 240),
             new Color(189, 231, 250),
             new Color(123, 208, 245),
             new Color(69, 181, 230),
@@ -61,11 +61,11 @@ class GraphPanel extends JPanel {
     private static final int WINDOW_PADDING = 15;
     private static final int TEXT_SIZE = 15;
     private static final int TEXT_LINE_SPACING = 1;
-    private static final Point DAY_GRID_START = new Point(75, 190);
-    private static final int DAY_GRID_BOX_SIZE = 21;
-    private static final int DAY_GRID_BOX_SPACING = 4;
+    private static final int DAY_GRID_BOX_SIZE = 22;
+    private static final int DAY_GRID_BOX_SPACING = 3;
     private static final int AXIS_PADDING = 8;
     private static final int AXIS_TICK = 4;
+    private static final int CORNER_RADIUS = 5;
 
     // Formatting Constants
     private DecimalFormat DECIMAL_FORMAT_3 = new DecimalFormat("0.00#");
@@ -129,15 +129,10 @@ class GraphPanel extends JPanel {
         // Draw Interface
         if (fullEventList != null && sharedEventList != null && virtualEventList != null) {
             drawTotals(graphics);
-
-            drawDailyEvents(graphics);
-
-            drawHourlyEvents(graphics, soloEventList, new Point(90, 520), "Solo", true);
-            drawHourlyEvents(graphics, sharedEventList, new Point(290, 520), "Shared", false);
-            drawHourlyEvents(graphics, virtualEventList, new Point(490, 520), "Virtual", false);
-            graphics.setColor(THEME_COLORS[6]);
-            graphics.setFont(new Font("Sanserif", Font.BOLD, 17));
-            drawCenteredString(graphics, "Hourly Occurrences", new Point(373, 485));
+            drawAnnualActivity(graphics, new Point(75, 170));
+            drawWeeklyActivity(graphics, new Point(90, 510));
+            drawDailyActivity(graphics, new Point(800, 600));
+            drawHourlyActivity(graphics, new Point(796, 840));
 
         } else {
             invalidate();
@@ -165,17 +160,17 @@ class GraphPanel extends JPanel {
         infoBaseHeight = currentHeight;
 
         int offset1 = -360;
-        int offset2 = -10;
-        int offset3 = 200;
-        int offset4 = 615;
+        int offset2 = -30;
+        int offset3 = 251;
+        int offset4 = 660;
 
         // Events
         graphics.setColor(TEXT_COLOR_SECONDARY);
         graphics.setFont(new Font("Sanserif", Font.BOLD, TEXT_SIZE - 1));
         graphics.drawString(
                 "Total: " + fullEventList.size()
-                        + "  (Avg: " + format3(dailyAverageEvents)
-                        + "/day, " + format3(weeklyAverageEvents) + "/week)",
+                        + "  (" + format3(dailyAverageEvents)
+                        + "/d) (" + format3(weeklyAverageEvents) + "/w)",
                 horizBase + offset1,
                 currentHeight
         );
@@ -207,20 +202,20 @@ class GraphPanel extends JPanel {
         );
         currentHeight = infoBaseHeight;
 
-        // Peak Day
+        // Top Day
         graphics.setColor(TEXT_COLOR_SECONDARY);
         graphics.drawString(
-                "Peak Day: " + peakDay,
+                "Top Day: " + peakDay,
                 horizBase + offset3,
                 currentHeight
         );
         currentHeight += graphics.getFontMetrics().getHeight();
         currentHeight += TEXT_LINE_SPACING;
 
-        // Peak Week
+        // Top Week
         graphics.setColor(TEXT_COLOR_SECONDARY);
         graphics.drawString(
-                "Peak Week: " + peakWeek,
+                "Top Week: " + peakWeek,
                 horizBase + offset3,
                 currentHeight
         );
@@ -248,7 +243,7 @@ class GraphPanel extends JPanel {
     /* Note: Method draws a GitHub-like grid of squares, color coded to indicate
      *       the number of events that took place on each day of the year.
      */
-    private void drawDailyEvents(Graphics2D graphics) {
+    private void drawAnnualActivity(Graphics2D graphics, Point location) {
 
         // Local Variables
         int rows = 6;           // Days of the Week (0-6)
@@ -264,27 +259,27 @@ class GraphPanel extends JPanel {
             // Calculate Day Color
             Date testDay = currentDay;
             List<Date> dayEvents = fullEventList.stream().filter(day ->
-                    areDaysEqual(testDay, day)
+                    areDatesEqual(testDay, day)
             ).collect(Collectors.toList());
             int eventsForDay = dayEvents.size();
             Color dayColor = getDailyColorFromNumberEvents(eventsForDay);
 
             // Draw Box
             Point boxLocation = new Point(
-                    DAY_GRID_START.x + (currentColumn * (DAY_GRID_BOX_SIZE + DAY_GRID_BOX_SPACING)),
-                    DAY_GRID_START.y + (currentRow * (DAY_GRID_BOX_SIZE + DAY_GRID_BOX_SPACING))
+                    location.x + (currentColumn * (DAY_GRID_BOX_SIZE + DAY_GRID_BOX_SPACING)),
+                    location.y + (currentRow * (DAY_GRID_BOX_SIZE + DAY_GRID_BOX_SPACING))
             );
             boolean monthChange = false;
-            if (currentDay.getMonth() != currentMonth || areDaysEqual(currentDay, new Date("01/01/2020"))) {
+            if (currentDay.getMonth() != currentMonth || areDatesEqual(currentDay, new Date("01/01/2020"))) {
                 currentMonth = currentDay.getMonth();
                 monthChange = true;
             }
             List<Date> sharedEvents = sharedEventList.stream().filter(day ->
-                    areDaysEqual(testDay, day)
+                    areDatesEqual(testDay, day)
             ).collect(Collectors.toList());
             boolean sharedEvent = sharedEvents.size() > 0;
             List<Date> virtualEvents = virtualEventList.stream().filter(day ->
-                    areDaysEqual(testDay, day)
+                    areDatesEqual(testDay, day)
             ).collect(Collectors.toList());
             boolean virtualEvent = virtualEvents.size() > 0;
             drawDayGridBox(graphics, boxLocation, dayColor, monthChange, sharedEvent, virtualEvent);
@@ -302,45 +297,29 @@ class GraphPanel extends JPanel {
         // Draw Axes
         graphics.setColor(THEME_COLORS[4]);
         graphics.setStroke(new BasicStroke(1));
-        graphics.drawLine(
-                DAY_GRID_START.x - AXIS_PADDING,
-                DAY_GRID_START.y - AXIS_PADDING,
-                DAY_GRID_START.x - AXIS_PADDING,
-                DAY_GRID_START.y + (7 * DAY_GRID_BOX_SIZE) + (6 * DAY_GRID_BOX_SPACING) + AXIS_PADDING
-        );
-        graphics.drawLine(
-                DAY_GRID_START.x - AXIS_PADDING,
-                DAY_GRID_START.y + (7 * DAY_GRID_BOX_SIZE) + (6 * DAY_GRID_BOX_SPACING) + AXIS_PADDING,
-                DAY_GRID_START.x + (53 * DAY_GRID_BOX_SIZE) + (52 * DAY_GRID_BOX_SPACING) + AXIS_PADDING,
-                DAY_GRID_START.y + (7 * DAY_GRID_BOX_SIZE) + (6 * DAY_GRID_BOX_SPACING) + AXIS_PADDING
-        );
-        graphics.drawLine(
-                DAY_GRID_START.x - AXIS_PADDING,
-                DAY_GRID_START.y - AXIS_PADDING,
-                DAY_GRID_START.x + (53 * DAY_GRID_BOX_SIZE) + (52 * DAY_GRID_BOX_SPACING) + AXIS_PADDING,
-                DAY_GRID_START.y - AXIS_PADDING
-        );
-        graphics.drawLine(
-                DAY_GRID_START.x + (53 * DAY_GRID_BOX_SIZE) + (52 * DAY_GRID_BOX_SPACING) + AXIS_PADDING,
-                DAY_GRID_START.y - AXIS_PADDING,
-                DAY_GRID_START.x + (53 * DAY_GRID_BOX_SIZE) + (52 * DAY_GRID_BOX_SPACING) + AXIS_PADDING,
-                DAY_GRID_START.y + (7 * DAY_GRID_BOX_SIZE) + (6 * DAY_GRID_BOX_SPACING) + AXIS_PADDING
+        graphics.drawRoundRect(
+                location.x - AXIS_PADDING,
+                location.y - AXIS_PADDING,
+                (53 * DAY_GRID_BOX_SIZE) + (52 * DAY_GRID_BOX_SPACING) + (2 * AXIS_PADDING),
+                (7 * DAY_GRID_BOX_SIZE) + (6 * DAY_GRID_BOX_SPACING) + (2 * AXIS_PADDING),
+                CORNER_RADIUS,
+                CORNER_RADIUS
         );
 
         // Draw Labels
         graphics.setColor(DETAIL_COLOR);
-        graphics.setFont(new Font("Sanserif", Font.BOLD, 16));
-        int horizBase = DAY_GRID_START.x - (8 * DAY_GRID_BOX_SPACING);
-        int vertBase = DAY_GRID_START.y + (DAY_GRID_BOX_SIZE / 2) - (DAY_GRID_BOX_SPACING / 2) - 1;
+        graphics.setFont(new Font("Sanserif", Font.BOLD, 15));
+        int horizBase = location.x - (3 * AXIS_PADDING);
+        int vertBase = location.y + (DAY_GRID_BOX_SIZE / 2) - (DAY_GRID_BOX_SPACING / 2) - 1;
         String[] days = {"M", "T", "W", "T", "F", "S", "S"};
         for (int x = 0; x < 7; x++)
             drawCenteredString(graphics, days[x],
                     new Point(horizBase, vertBase + (x * (DAY_GRID_BOX_SIZE + DAY_GRID_BOX_SPACING))));
         graphics.setColor(DETAIL_COLOR);
         graphics.setFont(new Font("Sanserif", Font.BOLD, 16));
-        horizBase = DAY_GRID_START.x + 42;
-        vertBase = DAY_GRID_START.y + (7 * DAY_GRID_BOX_SIZE) + (6 * DAY_GRID_BOX_SPACING) + 28;
-        int horizOffset = 112;
+        horizBase = location.x + (2 * (DAY_GRID_BOX_SIZE + DAY_GRID_BOX_SPACING)) + 1;
+        vertBase = location.y + (7 * DAY_GRID_BOX_SIZE) + (6 * DAY_GRID_BOX_SPACING) + (3 * AXIS_PADDING);
+        int horizOffset = 110;
         String[] months = {"Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"};
         for (int x = 0; x < 12; x++)
             drawCenteredString(graphics, months[x], new Point(horizBase + (x * horizOffset), vertBase));
@@ -348,8 +327,8 @@ class GraphPanel extends JPanel {
 
         // Draw Color Key
         graphics.setFont(new Font("Sanserif", Font.BOLD | Font.ITALIC, 16));
-        horizBase = DAY_GRID_START.x + (54 * (DAY_GRID_BOX_SIZE + DAY_GRID_BOX_SPACING));
-        vertBase = DAY_GRID_START.y;
+        horizBase = location.x + (53 * DAY_GRID_BOX_SIZE) + (52 * DAY_GRID_BOX_SPACING) + (2 * AXIS_PADDING);
+        vertBase = location.y;
         for (int x = 0; x < 8; x++) {
             if (x < 6) {
                 Color dayColor = getDailyColorFromNumberEvents(x);
@@ -368,7 +347,7 @@ class GraphPanel extends JPanel {
         }
 
         // Draw Icon Key
-        Point boxLocation = new Point(DAY_GRID_START.x + 500, DAY_GRID_START.y + 230);
+        Point boxLocation = new Point(location.x + 500, location.y + 230);
         int textLocationX;
         int spaceAfterText = 20;
         String[] labels = {"New Month", "Shared", "Virtual"};
@@ -384,16 +363,25 @@ class GraphPanel extends JPanel {
         // Draw Title
         graphics.setColor(THEME_COLORS[6]);
         graphics.setFont(new Font("Sanserif", Font.BOLD, 17));
-        drawCenteredString(graphics, "Daily Occurrences", new Point(
-                DAY_GRID_START.x + ((53 * (DAY_GRID_BOX_SIZE + DAY_GRID_BOX_SPACING)) / 2),
-                DAY_GRID_START.y - 35
+        drawCenteredString(graphics, "Annual Activity", new Point(
+                location.x + ((53 * (DAY_GRID_BOX_SIZE + DAY_GRID_BOX_SPACING)) / 2),
+                location.y - 35
         ));
+    }
+
+    private void drawWeeklyActivity(Graphics2D graphics, Point start) {
+        drawWeeklyGraph(graphics, soloEventList, new Point(start.x, start.y), "Solo", true);
+        drawWeeklyGraph(graphics, sharedEventList, new Point(start.x + 200, start.y), "Shared", false);
+        drawWeeklyGraph(graphics, virtualEventList, new Point(start.x + 400, start.y), "Virtual", false);
+        graphics.setColor(THEME_COLORS[6]);
+        graphics.setFont(new Font("Sanserif", Font.BOLD, 17));
+        drawCenteredString(graphics, "Weekly Activity", new Point(start.x + 283, start.y - 40));
     }
 
     /* Note: Method draws a grid of rectangles, color coded to indicate
      *       the number of events that took place on each hour of the week.
      */
-    private void drawHourlyEvents(Graphics2D graphics, List<Date> events, Point location, String title, boolean showTimes) {
+    private void drawWeeklyGraph(Graphics2D graphics, List<Date> events, Point location, String title, boolean showTimes) {
 
         // Local Variables
         int HOUR_WIDTH = 23;
@@ -481,7 +469,7 @@ class GraphPanel extends JPanel {
 
         // Draw Day Labels
         graphics.setColor(DETAIL_COLOR);
-        graphics.setFont(new Font("Sanserif", Font.BOLD, 16));
+        graphics.setFont(new Font("Sanserif", Font.BOLD, 15));
         int horizBase = location.x + 12;
         int vertBase = location.y + (24 * HOUR_HEIGHT) + (23 * HOUR_SPACE) + (3 * AXIS_PADDING);
         String[] days = {"M", "T", "W", "T", "F", "S", "S"};
@@ -510,6 +498,236 @@ class GraphPanel extends JPanel {
                 location.y + (24 * (HOUR_HEIGHT + HOUR_SPACE)) + 55
         ));
 
+    }
+
+    private void drawDailyActivity(Graphics2D graphics, Point start) {
+        drawDailyGraph(graphics, "Solo", new Point(start.x, start.y), soloEventList);
+        drawDailyGraph(graphics, "Shared", new Point(start.x + 200, start.y), sharedEventList);
+        drawDailyGraph(graphics, "Virtual", new Point(start.x + 400, start.y), virtualEventList);
+        graphics.setColor(THEME_COLORS[6]);
+        graphics.setFont(new Font("Sanserif", Font.BOLD, 17));
+        drawCenteredString(graphics, "Daily Activity", new Point(start.x + 283, start.y - 165));
+    }
+
+    /* Note: Method draws a bar graph, color coded to indicate how many
+     *       events of each type took place on each day of the week.
+     */
+    private void drawDailyGraph(Graphics2D graphics, String title, Point location, List<Date> events) {
+
+        // Local Variables
+        int DAY_WIDTH = 21;
+        int DAY_MAX_HEIGHT = 125;
+        int DAY_SPACE = 3;
+        int DAYS = 7;
+        Date currentDay = new Date("01/06/2020");
+
+        // Determine Maximum Occurrences
+        int maxOccurrences = 0;
+        for (int x = 0; x < DAYS; x++) {
+
+            // Find Matching Days
+            Date day = currentDay;
+            List<Date> dailyEvents = events.stream().filter(testDay ->
+                    areDaysOfWeekEqual(day, testDay)
+            ).collect(Collectors.toList());
+
+            if (dailyEvents.size() > maxOccurrences) {
+                maxOccurrences = dailyEvents.size();
+            }
+
+            // Advance State Variables
+            currentDay = getDateOneDayLater(currentDay);
+        }
+
+        // Draw Graph
+        currentDay = new Date("01/06/2020");
+        for (int x = 0; x < DAYS; x++) {
+
+            // Find Day's Occurrences
+            Date day = currentDay;
+            List<Date> dailyEvents = events.stream().filter(testDay ->
+                    areDaysOfWeekEqual(day, testDay)
+            ).collect(Collectors.toList());
+
+            // Draw Background
+            graphics.setColor(THEME_COLORS[0]);
+            graphics.fillRoundRect(
+                    location.x + (x * (DAY_WIDTH + DAY_SPACE)),
+                    location.y - DAY_MAX_HEIGHT,
+                    DAY_WIDTH,
+                    DAY_MAX_HEIGHT,
+                    CORNER_RADIUS,
+                    CORNER_RADIUS
+            );
+
+            // Draw Bar
+            int barHeight = (int) ((dailyEvents.size() / (double) maxOccurrences) * DAY_MAX_HEIGHT);
+            graphics.setColor(getGradientColorDark(dailyEvents.size() / (double) maxOccurrences));
+            graphics.fillRoundRect(
+                    location.x + (x * (DAY_WIDTH + DAY_SPACE)),
+                    location.y - barHeight,
+                    DAY_WIDTH,
+                    barHeight,
+                    CORNER_RADIUS,
+                    CORNER_RADIUS
+            );
+
+            // Draw Count
+            graphics.setColor(BACKGROUND_COLOR);
+            graphics.setFont(new Font("Sanserif", Font.PLAIN, 15));
+            drawCenteredString(graphics, "" + dailyEvents.size(), new Point(
+                    location.x + (DAY_WIDTH / 2) + (x * (DAY_WIDTH + DAY_SPACE)),
+                    location.y - barHeight + AXIS_PADDING + 1
+            ));
+
+            // Advance State Variables
+            currentDay = getDateOneDayLater(currentDay);
+        }
+
+        // Draw Axis
+        graphics.setColor(THEME_COLORS[4]);
+        graphics.setStroke(new BasicStroke(1));
+        graphics.drawLine(
+                location.x,
+                location.y + AXIS_PADDING,
+                location.x + (7 * DAY_WIDTH) + (6 * DAY_SPACE),
+                location.y + AXIS_PADDING
+        );
+
+        // Draw Day Labels
+        graphics.setColor(DETAIL_COLOR);
+        graphics.setFont(new Font("Sanserif", Font.BOLD, 15));
+        int horizBase = location.x + (DAY_WIDTH / 2);
+        int vertBase = location.y + (3 * AXIS_PADDING);
+        String[] days = {"M", "T", "W", "T", "F", "S", "S"};
+        for (int x = 0; x < days.length; x++)
+            drawCenteredString(graphics, days[x], new Point(
+                    horizBase + (x * (DAY_WIDTH + DAY_SPACE)),
+                    vertBase
+            ));
+
+        // Draw Graph Label
+        graphics.setColor(DETAIL_COLOR);
+        graphics.setFont(new Font("Sanserif", Font.BOLD, 16));
+        drawCenteredString(graphics, title, new Point(
+                (int) (location.x + (3.5 * (DAY_WIDTH + DAY_SPACE))),
+                location.y + 55
+        ));
+    }
+
+    private void drawHourlyActivity(Graphics2D graphics, Point start) {
+        drawHourlyGraph(graphics, start);
+    }
+
+    private void drawHourlyGraph(Graphics2D graphics, Point location) {
+
+        // Local Variables
+        int HOUR_WIDTH = 21;
+        int HOUR_MAX_HEIGHT = 125;
+        int HOUR_SPACE = 3;
+        int HOURS = 24;
+        Date currentHour = getDateOneHourLater(new Date("01/06/2020"));  // First Monday of 2020 at 1 AM
+
+        // Determine Maximum Occurrences
+        int maxOccurrences = 0;
+        for (int x = 0; x < HOURS; x++) {
+
+            // Find Matching Days
+            Date hour = currentHour;
+            List<Date> hourlyEvents = fullEventList.stream().filter(testHour ->
+                    areHoursOfDayEqual(hour, testHour)
+            ).collect(Collectors.toList());
+
+            if (hourlyEvents.size() > maxOccurrences) {
+                maxOccurrences = hourlyEvents.size();
+            }
+
+            // Advance State Variables
+            currentHour = getDateOneHourLater(currentHour);
+        }
+
+        // Draw Graph
+        currentHour = getDateOneHourLater(new Date("01/06/2020"));  // First Monday of 2020 at 1 AM
+        for (int x = 0; x < HOURS; x++) {
+
+            // Find Day's Occurrences
+            Date hour = currentHour;
+            List<Date> hourlyEvents = fullEventList.stream().filter(testHour ->
+                    areHoursOfDayEqual(hour, testHour)
+            ).collect(Collectors.toList());
+
+            // Draw Background
+            graphics.setColor(THEME_COLORS[0]);
+            graphics.fillRoundRect(
+                    location.x + (x * (HOUR_WIDTH + HOUR_SPACE)),
+                    location.y - HOUR_MAX_HEIGHT,
+                    HOUR_WIDTH,
+                    HOUR_MAX_HEIGHT,
+                    CORNER_RADIUS,
+                    CORNER_RADIUS
+            );
+
+            // Draw Bar
+            double percent = hourlyEvents.size() / (double) maxOccurrences;
+            int barHeight = (int) (percent * HOUR_MAX_HEIGHT);
+            graphics.setColor(getGradientColorDark(percent));
+            graphics.fillRoundRect(
+                    location.x + (x * (HOUR_WIDTH + HOUR_SPACE)),
+                    location.y - barHeight,
+                    HOUR_WIDTH,
+                    barHeight,
+                    CORNER_RADIUS,
+                    CORNER_RADIUS
+            );
+
+            // Draw Count
+            int countVertPos = location.y - barHeight;
+            if (percent > .4) {
+                graphics.setColor(BACKGROUND_COLOR);
+                countVertPos += AXIS_PADDING + 1;
+            } else {
+                graphics.setColor(THEME_COLORS[5]);
+                countVertPos -= AXIS_PADDING + 1;
+            }
+            graphics.setFont(new Font("Sanserif", Font.PLAIN, 15));
+            drawCenteredString(graphics, "" + hourlyEvents.size(), new Point(
+                    location.x + (HOUR_WIDTH / 2) + (x * (HOUR_WIDTH + HOUR_SPACE)),
+                    countVertPos
+            ));
+
+            // Advance State Variables
+            currentHour = getDateOneHourLater(currentHour);
+        }
+
+        // Draw Axis
+        graphics.setColor(THEME_COLORS[4]);
+        graphics.setStroke(new BasicStroke(1));
+        graphics.drawLine(
+                location.x,
+                location.y + AXIS_PADDING,
+                location.x + (24 * HOUR_WIDTH) + (23 * HOUR_SPACE),
+                location.y + AXIS_PADDING
+        );
+        int horizTick = location.x + (HOUR_WIDTH / 2);
+        int vertTick = location.y + AXIS_PADDING;
+        for (int x = 0; x < HOURS; x++)
+            drawLine(
+                    graphics,
+                    new Point(horizTick + (x * (HOUR_WIDTH + HOUR_SPACE)), vertTick),
+                    new Point(horizTick + (x * (HOUR_WIDTH + HOUR_SPACE)), vertTick + AXIS_TICK)
+            );
+
+        // Draw Time Labels
+        graphics.setColor(DETAIL_COLOR);
+        graphics.setFont(new Font("Sanserif", Font.BOLD, 15));
+        int horizBase = location.x + (HOUR_WIDTH / 2) + (1 * (HOUR_WIDTH + HOUR_SPACE));
+        int vertBase = location.y + (3 * AXIS_PADDING);
+        String[] times = {"2a", "4a", "6a", "8a", "10a", "12p", "2p", "4p", "6p", "8p", "10p", "12p"};
+        for (int x = 0; x < times.length; x++)
+            drawCenteredString(graphics, times[x], new Point(
+                    horizBase + (2 * x * (HOUR_WIDTH + HOUR_SPACE)),
+                    vertBase
+            ));
     }
 
 
@@ -550,10 +768,10 @@ class GraphPanel extends JPanel {
 
 
         return " " + days + "d "
-                + hours + "hr "
-                + minutes + "min  ("
-                + InputReader.EVENT_DAY_FORMAT.format(start).toLowerCase() + " - "
-                + InputReader.EVENT_DAY_FORMAT.format(end).toLowerCase() + ")";
+                + hours + "h "
+                + minutes + "m  ("
+                + InputReader.EVENT_DAY_PROSE_FORMAT.format(start) + " - "
+                + InputReader.EVENT_DAY_PROSE_FORMAT.format(end) + ")";
     }
 
     private String getShortestGap() {
@@ -581,8 +799,9 @@ class GraphPanel extends JPanel {
 
         return //" " + days + "d "
                 // + hours + "hr "
-                "" + minutes + "min  ("
-                        + InputReader.EVENT_STRING_FORMAT.format(start).toLowerCase() + " - "
+                "" + minutes + "m  ("
+                        + InputReader.EVENT_DAY_PROSE_FORMAT.format(start) + ", "
+                        + InputReader.EVENT_TIME_FORMAT.format(start).toLowerCase() + " - "
                         + InputReader.EVENT_TIME_FORMAT.format(end).toLowerCase() + ")";
     }
 
@@ -593,7 +812,7 @@ class GraphPanel extends JPanel {
         Date peakDay = new Date();
         for (Date event : fullEventList) {
             List<Date> dayEvents = fullEventList.stream().filter(day ->
-                    areDaysEqual(event, day)
+                    areDatesEqual(event, day)
             ).collect(Collectors.toList());
             if (dayEvents.size() > most) {
                 most = dayEvents.size();
@@ -601,7 +820,7 @@ class GraphPanel extends JPanel {
             }
         }
 
-        return " " + most + " on " + InputReader.EVENT_DAY_FORMAT.format(peakDay);
+        return " " + most + "  (" + InputReader.EVENT_DAY_PROSE_FORMAT.format(peakDay) + ")";
     }
 
     private String getPeakWeek() {
@@ -622,18 +841,28 @@ class GraphPanel extends JPanel {
             }
         }
 
-        return " " + most + " beginning (" + InputReader.EVENT_STRING_FORMAT.format(peakWeekStart).toLowerCase() + ")";
+        return " " + most + "  (Began "
+                + InputReader.EVENT_DAY_PROSE_FORMAT.format(peakWeekStart) + " @ "
+                + InputReader.EVENT_TIME_FORMAT.format(peakWeekStart).toLowerCase() + ")";
     }
 
-    private boolean areDaysEqual(Date d1, Date d2) {
+    private boolean areEventsSameWeeklyHour(Date d1, Date d2) {
+        return areDaysOfWeekEqual(d1, d2) && areHoursOfDayEqual(d1, d2);
+    }
+
+    private boolean areDaysOfWeekEqual(Date d1, Date d2) {
+        return d1.getDay() == d2.getDay();
+    }
+
+    private boolean areHoursOfDayEqual(Date d1, Date d2) {
+        return d1.getHours() == d2.getHours();
+    }
+
+    private boolean areDatesEqual(Date d1, Date d2) {
         Date newDate1 = getZeroTimeDate(d1);
         Date newDate2 = getZeroTimeDate(d2);
 
         return newDate1.compareTo(newDate2) == 0;
-    }
-
-    private boolean areEventsSameWeeklyHour(Date d1, Date d2) {
-        return d1.getDay() == d2.getDay() && d1.getHours() == d2.getHours();
     }
 
     private Date getDateOneWeekLater(Date date) {
@@ -705,6 +934,16 @@ class GraphPanel extends JPanel {
         }
     }
 
+    private Color getGradientColorDark(double factor) {
+        if (factor < .5) {
+            double newFactor = factor / 0.5;
+            return lerpColor(THEME_COLORS[2], THEME_COLORS[3], newFactor);
+        } else {
+            double newFactor = (factor - 0.5) / 0.5;
+            return lerpColor(THEME_COLORS[3], THEME_COLORS[5], newFactor);
+        }
+    }
+
     private Color lerpColor(Color a, Color b, double factor) {
         return new Color(
                 clamp(lerp(a.getRed(), b.getRed(), factor), 0, 255),
@@ -727,10 +966,10 @@ class GraphPanel extends JPanel {
 
         // Draw Box
         graphics.setColor(color);
-        graphics.fillRect(location.x, location.y, DAY_GRID_BOX_SIZE, DAY_GRID_BOX_SIZE); //, 2, 2);
+        graphics.fillRoundRect(location.x, location.y, DAY_GRID_BOX_SIZE, DAY_GRID_BOX_SIZE, CORNER_RADIUS, CORNER_RADIUS);
 
         // Draw Details
-        int offset = 6;
+        int offset = 7;
         int size = 8;
         if (newMonth) {
             graphics.setColor(BACKGROUND_COLOR);
