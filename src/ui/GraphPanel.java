@@ -480,8 +480,8 @@ class GraphPanel extends JPanel {
         // Draw Time Labels
         if (showTimes) {
             graphics.setColor(DETAIL_COLOR);
-            graphics.setFont(new Font("Sanserif", Font.BOLD, 16));
-            horizBase = location.x - 40;
+            graphics.setFont(new Font("Sanserif", Font.BOLD, 15));
+            horizBase = location.x - 35;
             vertBase = location.y + (5 * (HOUR_HEIGHT + HOUR_SPACE)) + 2;
             String[] times = {"6am", "12pm", "6pm", "12am"};
             for (int x = 0; x < times.length; x++)
