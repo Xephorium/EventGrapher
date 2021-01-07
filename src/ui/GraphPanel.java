@@ -112,6 +112,7 @@ class GraphPanel extends JPanel {
         peakWeek = getPeakWeek();
 
         // Configure UI
+        setPreferredSize(new Dimension(InterfaceConstants.WINDOW_WIDTH - 50, InterfaceConstants.PANEL_HEIGHT));
         setBackground(BACKGROUND_COLOR);
     }
 
@@ -129,10 +130,10 @@ class GraphPanel extends JPanel {
         // Draw Interface
         if (fullEventList != null && sharedEventList != null && virtualEventList != null) {
             drawTotals(graphics);
-            drawAnnualActivity(graphics, new Point(75, 170));
-            drawWeeklyActivity(graphics, new Point(90, 510));
-            drawDailyActivity(graphics, new Point(800, 600));
-            drawHourlyActivity(graphics, new Point(796, 840));
+            drawAnnualActivity(graphics, new Point(75, 190));
+            drawWeeklyActivity(graphics, new Point(90, 540));
+            drawDailyActivity(graphics, new Point(800, 665));
+            drawHourlyActivity(graphics, new Point(796, 945));
 
         } else {
             invalidate();
@@ -375,7 +376,7 @@ class GraphPanel extends JPanel {
         drawWeeklyGraph(graphics, virtualEventList, new Point(start.x + 400, start.y), "Virtual", false);
         graphics.setColor(THEME_COLORS[6]);
         graphics.setFont(new Font("Sanserif", Font.BOLD, 17));
-        drawCenteredString(graphics, "Weekly Activity", new Point(start.x + 283, start.y - 40));
+        drawCenteredString(graphics, "Weekly Activity", new Point(start.x + 283, start.y - 35));
     }
 
     /* Note: Method draws a grid of rectangles, color coded to indicate
@@ -492,10 +493,10 @@ class GraphPanel extends JPanel {
 
         // Draw Title
         graphics.setColor(DETAIL_COLOR);
-        graphics.setFont(new Font("Sanserif", Font.BOLD, 16));
+        graphics.setFont(new Font("Sanserif", Font.BOLD | Font.ITALIC, 16));
         drawCenteredString(graphics, title, new Point(
                 (int) (location.x + (3.5 * (HOUR_WIDTH + HOUR_SPACE))),
-                location.y + (24 * (HOUR_HEIGHT + HOUR_SPACE)) + 55
+                location.y + (24 * (HOUR_HEIGHT + HOUR_SPACE)) + 47
         ));
 
     }
@@ -506,7 +507,7 @@ class GraphPanel extends JPanel {
         drawDailyGraph(graphics, "Virtual", new Point(start.x + 400, start.y), virtualEventList);
         graphics.setColor(THEME_COLORS[6]);
         graphics.setFont(new Font("Sanserif", Font.BOLD, 17));
-        drawCenteredString(graphics, "Daily Activity", new Point(start.x + 283, start.y - 165));
+        drawCenteredString(graphics, "Daily Activity", new Point(start.x + 283, start.y - 160));
     }
 
     /* Note: Method draws a bar graph, color coded to indicate how many
@@ -608,10 +609,10 @@ class GraphPanel extends JPanel {
 
         // Draw Graph Label
         graphics.setColor(DETAIL_COLOR);
-        graphics.setFont(new Font("Sanserif", Font.BOLD, 16));
+        graphics.setFont(new Font("Sanserif", Font.BOLD | Font.ITALIC, 16));
         drawCenteredString(graphics, title, new Point(
                 (int) (location.x + (3.5 * (DAY_WIDTH + DAY_SPACE))),
-                location.y + 55
+                location.y + 47
         ));
     }
 
@@ -627,6 +628,7 @@ class GraphPanel extends JPanel {
         int HOUR_SPACE = 3;
         int HOURS = 24;
         Date currentHour = getDateOneHourLater(new Date("01/06/2020"));  // First Monday of 2020 at 1 AM
+        List<Date> events = fullEventList;
 
         // Determine Maximum Occurrences
         int maxOccurrences = 0;
@@ -634,7 +636,7 @@ class GraphPanel extends JPanel {
 
             // Find Matching Days
             Date hour = currentHour;
-            List<Date> hourlyEvents = fullEventList.stream().filter(testHour ->
+            List<Date> hourlyEvents = events.stream().filter(testHour ->
                     areHoursOfDayEqual(hour, testHour)
             ).collect(Collectors.toList());
 
@@ -652,7 +654,7 @@ class GraphPanel extends JPanel {
 
             // Find Day's Occurrences
             Date hour = currentHour;
-            List<Date> hourlyEvents = fullEventList.stream().filter(testHour ->
+            List<Date> hourlyEvents = events.stream().filter(testHour ->
                     areHoursOfDayEqual(hour, testHour)
             ).collect(Collectors.toList());
 
@@ -689,11 +691,13 @@ class GraphPanel extends JPanel {
                 graphics.setColor(THEME_COLORS[5]);
                 countVertPos -= AXIS_PADDING + 1;
             }
-            graphics.setFont(new Font("Sanserif", Font.PLAIN, 15));
-            drawCenteredString(graphics, "" + hourlyEvents.size(), new Point(
-                    location.x + (HOUR_WIDTH / 2) + (x * (HOUR_WIDTH + HOUR_SPACE)),
-                    countVertPos
-            ));
+            if (percent > 0) {
+                graphics.setFont(new Font("Sanserif", Font.PLAIN, 15));
+                drawCenteredString(graphics, "" + hourlyEvents.size(), new Point(
+                        location.x + (HOUR_WIDTH / 2) + (x * (HOUR_WIDTH + HOUR_SPACE)),
+                        countVertPos
+                ));
+            }
 
             // Advance State Variables
             currentHour = getDateOneHourLater(currentHour);
@@ -728,6 +732,14 @@ class GraphPanel extends JPanel {
                     horizBase + (2 * x * (HOUR_WIDTH + HOUR_SPACE)),
                     vertBase
             ));
+
+        // Draw Title
+        graphics.setColor(THEME_COLORS[6]);
+        graphics.setFont(new Font("Sanserif", Font.BOLD, 17));
+        drawCenteredString(graphics, "Hourly Activity", new Point(
+                location.x + (12 * HOUR_WIDTH) + (11 * HOUR_SPACE),
+                location.y - 160
+        ));
     }
 
 

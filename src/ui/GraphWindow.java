@@ -62,6 +62,7 @@ public class GraphWindow {
     }
 
     private void addViewClasses() {
-        frame.add(graphPanel, BorderLayout.CENTER);
+        JScrollPane scrollPane = new JScrollPane(graphPanel);
+        frame.add(scrollPane, BorderLayout.CENTER);
     }
 }
