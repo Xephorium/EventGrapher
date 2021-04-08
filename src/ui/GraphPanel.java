@@ -42,20 +42,35 @@ class GraphPanel extends JPanel {
 
     // Color Constants
     private static final Color[] THEME_COLORS = {
-            new Color(240, 240, 240),
-            new Color(189, 231, 250),
-            new Color(123, 208, 245),
-            new Color(69, 181, 230),
-            new Color(87, 154, 199),
-            new Color(65, 116, 163),
-            new Color(54, 95, 135),
+            new Color(53, 57, 64),
+            new Color(56, 71, 99),
+            new Color(63, 91, 143),
+            new Color(87, 120, 181),
+            new Color(131, 156, 201),
+            new Color(184, 200, 227),
+            new Color(255, 255, 255),
+
             new Color(51, 72, 102),
             new Color(70, 70, 70)
     };
-    private static final Color BACKGROUND_COLOR = new Color(255, 255, 255);
-    private static final Color DETAIL_COLOR = THEME_COLORS[4];
-    private static final Color TEXT_COLOR_PRIMARY = THEME_COLORS[6];
-    private static final Color TEXT_COLOR_SECONDARY = THEME_COLORS[5];
+
+//    // Old Theme Colors (White -> Blue)
+//    private static final Color[] THEME_COLORS = {
+//            new Color(240, 240, 240),
+//            new Color(189, 231, 250),
+//            new Color(123, 208, 245),
+//            new Color(69, 181, 230),
+//            new Color(87, 154, 199),
+//            new Color(65, 116, 163),
+//            new Color(54, 95, 135),
+//            new Color(51, 72, 102),
+//            new Color(70, 70, 70)
+//    };
+
+    private static final Color BACKGROUND_COLOR = new Color(40, 42, 47);
+    private static final Color AXIS_COLOR = new Color(99, 107, 120);
+    private static final Color TEXT_COLOR_PRIMARY = new Color(255, 255, 255);
+    private static final Color TEXT_COLOR_SECONDARY = new Color(127, 137, 153);
 
     // Paint Constants
     private static final int WINDOW_PADDING = 15;
@@ -66,6 +81,7 @@ class GraphPanel extends JPanel {
     private static final int AXIS_PADDING = 8;
     private static final int AXIS_TICK = 4;
     private static final int CORNER_RADIUS = 5;
+    private static final float AXIS_SIZE = 1.5f;
 
     // Formatting Constants
     private DecimalFormat DECIMAL_FORMAT_3 = new DecimalFormat("0.00#");
@@ -296,8 +312,8 @@ class GraphPanel extends JPanel {
         }
 
         // Draw Axes
-        graphics.setColor(THEME_COLORS[4]);
-        graphics.setStroke(new BasicStroke(1));
+        graphics.setColor(AXIS_COLOR);
+        graphics.setStroke(new BasicStroke(AXIS_SIZE));
         graphics.drawRoundRect(
                 location.x - AXIS_PADDING,
                 location.y - AXIS_PADDING,
@@ -308,7 +324,7 @@ class GraphPanel extends JPanel {
         );
 
         // Draw Labels
-        graphics.setColor(DETAIL_COLOR);
+        graphics.setColor(TEXT_COLOR_SECONDARY);
         graphics.setFont(new Font("Sanserif", Font.BOLD, 15));
         int horizBase = location.x - (3 * AXIS_PADDING);
         int vertBase = location.y + (DAY_GRID_BOX_SIZE / 2) - (DAY_GRID_BOX_SPACING / 2) - 1;
@@ -316,7 +332,7 @@ class GraphPanel extends JPanel {
         for (int x = 0; x < 7; x++)
             drawCenteredString(graphics, days[x],
                     new Point(horizBase, vertBase + (x * (DAY_GRID_BOX_SIZE + DAY_GRID_BOX_SPACING))));
-        graphics.setColor(DETAIL_COLOR);
+        graphics.setColor(TEXT_COLOR_SECONDARY);
         graphics.setFont(new Font("Sanserif", Font.BOLD, 16));
         horizBase = location.x + (2 * (DAY_GRID_BOX_SIZE + DAY_GRID_BOX_SPACING)) + 1;
         vertBase = location.y + (7 * DAY_GRID_BOX_SIZE) + (6 * DAY_GRID_BOX_SPACING) + (3 * AXIS_PADDING);
@@ -335,7 +351,7 @@ class GraphPanel extends JPanel {
                 Color dayColor = getDailyColorFromNumberEvents(x);
                 Point boxLocation = new Point(horizBase, vertBase + (x * (DAY_GRID_BOX_SIZE + DAY_GRID_BOX_SPACING)));
                 drawDayGridBox(graphics, boxLocation, dayColor, false, false, false);
-                if (x < 3) graphics.setColor(THEME_COLORS[6]);
+                if (x < 4) graphics.setColor(THEME_COLORS[6]);
                 else graphics.setColor(BACKGROUND_COLOR);
                 drawCenteredString(graphics, "" + x, new Point(boxLocation.x + (DAY_GRID_BOX_SIZE / 2) - 1, boxLocation.y + (DAY_GRID_BOX_SIZE / 2) - 1));
             } else if (x == 7) {
@@ -354,8 +370,8 @@ class GraphPanel extends JPanel {
         String[] labels = {"New Month", "Shared", "Virtual"};
         for (int x = 0; x < 3; x++) {
             boolean isFirst = x == 0;
-            drawDayGridBox(graphics, boxLocation, isFirst ? THEME_COLORS[5] : BACKGROUND_COLOR, x == 0, x == 1, x == 2);
-            graphics.setColor(DETAIL_COLOR);
+            drawDayGridBox(graphics, boxLocation, isFirst ? TEXT_COLOR_SECONDARY : BACKGROUND_COLOR, x == 0, x == 1, x == 2);
+            graphics.setColor(TEXT_COLOR_SECONDARY);
             textLocationX = boxLocation.x + DAY_GRID_BOX_SIZE + (getTextWidth(graphics, labels[x]) / 2) + (isFirst ? 10 : 2);
             drawCenteredString(graphics, labels[x], new Point(textLocationX, boxLocation.y + (DAY_GRID_BOX_SIZE / 2) - 1));
             boxLocation = new Point(textLocationX + (getTextWidth(graphics, labels[x]) / 2) + spaceAfterText, boxLocation.y);
@@ -422,7 +438,7 @@ class GraphPanel extends JPanel {
 
             // Prepare To Draw Box
             double colorPercent = hourlyEvents.size() / (double) maxEvents;
-            Color color = getGradientColor(colorPercent); // lerpColor(THEME_COLORS[0], THEME_COLORS[3], colorPercent);
+            Color color = getHourlyEventBoxColor(colorPercent);
 
             // Draw Box
             graphics.setColor(color);
@@ -444,8 +460,8 @@ class GraphPanel extends JPanel {
         }
 
         // Draw Axes
-        graphics.setColor(THEME_COLORS[4]);
-        graphics.setStroke(new BasicStroke(1));
+        graphics.setColor(AXIS_COLOR);
+        graphics.setStroke(new BasicStroke(AXIS_SIZE));
         graphics.drawLine(
                 location.x - AXIS_PADDING,
                 location.y,
@@ -469,7 +485,7 @@ class GraphPanel extends JPanel {
         }
 
         // Draw Day Labels
-        graphics.setColor(DETAIL_COLOR);
+        graphics.setColor(TEXT_COLOR_SECONDARY);
         graphics.setFont(new Font("Sanserif", Font.BOLD, 15));
         int horizBase = location.x + 12;
         int vertBase = location.y + (24 * HOUR_HEIGHT) + (23 * HOUR_SPACE) + (3 * AXIS_PADDING);
@@ -480,7 +496,7 @@ class GraphPanel extends JPanel {
 
         // Draw Time Labels
         if (showTimes) {
-            graphics.setColor(DETAIL_COLOR);
+            graphics.setColor(TEXT_COLOR_SECONDARY);
             graphics.setFont(new Font("Sanserif", Font.BOLD, 15));
             horizBase = location.x - 35;
             vertBase = location.y + (5 * (HOUR_HEIGHT + HOUR_SPACE)) + 2;
@@ -492,7 +508,7 @@ class GraphPanel extends JPanel {
         }
 
         // Draw Title
-        graphics.setColor(DETAIL_COLOR);
+        graphics.setColor(TEXT_COLOR_SECONDARY);
         graphics.setFont(new Font("Sanserif", Font.BOLD | Font.ITALIC, 16));
         drawCenteredString(graphics, title, new Point(
                 (int) (location.x + (3.5 * (HOUR_WIDTH + HOUR_SPACE))),
@@ -540,6 +556,31 @@ class GraphPanel extends JPanel {
             currentDay = getDateOneDayLater(currentDay);
         }
 
+        // Determine Minimum Occurrences
+        int minOccurrences = 7000;
+        for (int x = 0; x < DAYS; x++) {
+
+            // Find Matching Days
+            Date day = currentDay;
+            List<Date> dailyEvents = events.stream().filter(testDay ->
+                    areDaysOfWeekEqual(day, testDay)
+            ).collect(Collectors.toList());
+
+            if (minOccurrences == 7000) {
+
+                // Initialize Minimum Occurrences
+                minOccurrences = dailyEvents.size();
+
+            } else if (dailyEvents.size() < minOccurrences) {
+
+                // Update Minimum Occurrences
+                minOccurrences = dailyEvents.size();
+            }
+
+            // Advance State Variables
+            currentDay = getDateOneDayLater(currentDay);
+        }
+
         // Draw Graph
         currentDay = new Date("01/06/2020");
         for (int x = 0; x < DAYS; x++) {
@@ -563,7 +604,7 @@ class GraphPanel extends JPanel {
 
             // Draw Bar
             int barHeight = (int) ((dailyEvents.size() / (double) maxOccurrences) * DAY_MAX_HEIGHT);
-            graphics.setColor(getGradientColorDark(dailyEvents.size() / (double) maxOccurrences));
+            graphics.setColor(getBoostedGradientColor((dailyEvents.size() - minOccurrences) / (double) (maxOccurrences - minOccurrences) ));
             graphics.fillRoundRect(
                     location.x + (x * (DAY_WIDTH + DAY_SPACE)),
                     location.y - barHeight,
@@ -574,7 +615,13 @@ class GraphPanel extends JPanel {
             );
 
             // Draw Count
-            graphics.setColor(BACKGROUND_COLOR);
+            if (barHeight == 0) {
+                graphics.setColor(BACKGROUND_COLOR);
+            } else if ((dailyEvents.size() / (double) maxOccurrences) > .4) {
+                graphics.setColor(BACKGROUND_COLOR);
+            } else {
+                graphics.setColor(THEME_COLORS[6]);
+            }
             graphics.setFont(new Font("Sanserif", Font.PLAIN, 15));
             drawCenteredString(graphics, "" + dailyEvents.size(), new Point(
                     location.x + (DAY_WIDTH / 2) + (x * (DAY_WIDTH + DAY_SPACE)),
@@ -586,8 +633,8 @@ class GraphPanel extends JPanel {
         }
 
         // Draw Axis
-        graphics.setColor(THEME_COLORS[4]);
-        graphics.setStroke(new BasicStroke(1));
+        graphics.setColor(AXIS_COLOR);
+        graphics.setStroke(new BasicStroke(AXIS_SIZE));
         graphics.drawLine(
                 location.x,
                 location.y + AXIS_PADDING,
@@ -596,7 +643,7 @@ class GraphPanel extends JPanel {
         );
 
         // Draw Day Labels
-        graphics.setColor(DETAIL_COLOR);
+        graphics.setColor(TEXT_COLOR_SECONDARY);
         graphics.setFont(new Font("Sanserif", Font.BOLD, 15));
         int horizBase = location.x + (DAY_WIDTH / 2);
         int vertBase = location.y + (3 * AXIS_PADDING);
@@ -608,7 +655,7 @@ class GraphPanel extends JPanel {
             ));
 
         // Draw Graph Label
-        graphics.setColor(DETAIL_COLOR);
+        graphics.setColor(TEXT_COLOR_SECONDARY);
         graphics.setFont(new Font("Sanserif", Font.BOLD | Font.ITALIC, 16));
         drawCenteredString(graphics, title, new Point(
                 (int) (location.x + (3.5 * (DAY_WIDTH + DAY_SPACE))),
@@ -669,10 +716,10 @@ class GraphPanel extends JPanel {
                     CORNER_RADIUS
             );
 
-            // Draw Bar
+            // Draw Box
             double percent = hourlyEvents.size() / (double) maxOccurrences;
             int barHeight = (int) (percent * HOUR_MAX_HEIGHT);
-            graphics.setColor(getGradientColorDark(percent));
+            graphics.setColor(getGradientColor(percent));
             graphics.fillRoundRect(
                     location.x + (x * (HOUR_WIDTH + HOUR_SPACE)),
                     location.y - barHeight,
@@ -684,12 +731,12 @@ class GraphPanel extends JPanel {
 
             // Draw Count
             int countVertPos = location.y - barHeight;
-            if (percent > .4) {
+            if (percent > .45) {
                 graphics.setColor(BACKGROUND_COLOR);
-                countVertPos += AXIS_PADDING + 1;
+                countVertPos += AXIS_PADDING + 1; // Draw On Bar
             } else {
-                graphics.setColor(THEME_COLORS[5]);
-                countVertPos -= AXIS_PADDING + 1;
+                graphics.setColor(THEME_COLORS[6]);
+                countVertPos -= AXIS_PADDING + 1; // Draw Below Bar
             }
             if (percent > 0) {
                 graphics.setFont(new Font("Sanserif", Font.PLAIN, 15));
@@ -704,8 +751,8 @@ class GraphPanel extends JPanel {
         }
 
         // Draw Axis
-        graphics.setColor(THEME_COLORS[4]);
-        graphics.setStroke(new BasicStroke(1));
+        graphics.setColor(AXIS_COLOR);
+        graphics.setStroke(new BasicStroke(AXIS_SIZE));
         graphics.drawLine(
                 location.x,
                 location.y + AXIS_PADDING,
@@ -722,7 +769,7 @@ class GraphPanel extends JPanel {
             );
 
         // Draw Time Labels
-        graphics.setColor(DETAIL_COLOR);
+        graphics.setColor(TEXT_COLOR_SECONDARY);
         graphics.setFont(new Font("Sanserif", Font.BOLD, 15));
         int horizBase = location.x + (HOUR_WIDTH / 2) + (1 * (HOUR_WIDTH + HOUR_SPACE));
         int vertBase = location.y + (3 * AXIS_PADDING);
@@ -939,20 +986,30 @@ class GraphPanel extends JPanel {
     private Color getGradientColor(double factor) {
         if (factor < .5) {
             double newFactor = factor / 0.5;
-            return lerpColor(THEME_COLORS[0], THEME_COLORS[3], newFactor);
+            return lerpColor(THEME_COLORS[1], THEME_COLORS[3], newFactor);
         } else {
             double newFactor = (factor - 0.5) / 0.5;
-            return lerpColor(THEME_COLORS[3], THEME_COLORS[5], newFactor);
+            return lerpColor(THEME_COLORS[3], THEME_COLORS[6], newFactor);
         }
     }
 
-    private Color getGradientColorDark(double factor) {
+    private Color getBoostedGradientColor(double factor) {
         if (factor < .5) {
             double newFactor = factor / 0.5;
-            return lerpColor(THEME_COLORS[2], THEME_COLORS[3], newFactor);
+            return lerpColor(THEME_COLORS[2], THEME_COLORS[4], newFactor);
         } else {
             double newFactor = (factor - 0.5) / 0.5;
-            return lerpColor(THEME_COLORS[3], THEME_COLORS[5], newFactor);
+            return lerpColor(THEME_COLORS[4], THEME_COLORS[6], newFactor);
+        }
+    }
+
+    private Color getHourlyEventBoxColor(double factor) {
+        if (factor < .5) {
+            double newFactor = factor / 0.5;
+            return lerpColor(THEME_COLORS[0], THEME_COLORS[3], newFactor);
+        } else {
+            double newFactor = (factor - 0.5) / 0.5;
+            return lerpColor(THEME_COLORS[3], THEME_COLORS[6], newFactor);
         }
     }
 
@@ -1000,7 +1057,7 @@ class GraphPanel extends JPanel {
                     size + 2,
                     size + 2
             );
-            graphics.setColor(new Color(255, 255, 255));
+            graphics.setColor(BACKGROUND_COLOR);
             graphics.fillOval(
                     location.x + offset,
                     location.y + offset,
