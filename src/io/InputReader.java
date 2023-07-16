@@ -30,7 +30,7 @@ public class InputReader {
     private static final String INPUT_FILENAME = "input\\input.txt";
 
     // Variables
-    private File inputFile;
+    private final File inputFile;
     private List<String> inputContents;
 
 

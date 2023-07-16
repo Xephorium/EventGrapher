@@ -314,13 +314,25 @@ class GraphPanel extends JPanel {
         // Draw Axes
         graphics.setColor(AXIS_COLOR);
         graphics.setStroke(new BasicStroke(AXIS_SIZE));
+//        graphics.drawLine(
+//                location.x - AXIS_PADDING,
+//                location.y,
+//                location.x - AXIS_PADDING,
+//                location.y + (7 * DAY_GRID_BOX_SIZE) + (6 * DAY_GRID_BOX_SPACING)
+//        );
+//        graphics.drawLine(
+//                location.x + (53 * DAY_GRID_BOX_SIZE) + (52 * DAY_GRID_BOX_SPACING) + (AXIS_PADDING),
+//                location.y,
+//                location.x + (53 * DAY_GRID_BOX_SIZE) + (52 * DAY_GRID_BOX_SPACING) + (AXIS_PADDING),
+//                location.y + (7 * DAY_GRID_BOX_SIZE) + (6 * DAY_GRID_BOX_SPACING)
+//        );
         graphics.drawRoundRect(
                 location.x - AXIS_PADDING,
                 location.y - AXIS_PADDING,
                 (53 * DAY_GRID_BOX_SIZE) + (52 * DAY_GRID_BOX_SPACING) + (2 * AXIS_PADDING),
                 (7 * DAY_GRID_BOX_SIZE) + (6 * DAY_GRID_BOX_SPACING) + (2 * AXIS_PADDING),
-                CORNER_RADIUS,
-                CORNER_RADIUS
+                0,
+                0
         );
 
         // Draw Labels
