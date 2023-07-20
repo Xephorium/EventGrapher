@@ -12,8 +12,12 @@ public class Performer {
     /*--- Constructor ---*/
 
     public Performer() {
-
         name = "";
+        site = "";
+    }
+
+    public Performer(String n, String s) {
+        name = n;
         site = "";
     }
 }
