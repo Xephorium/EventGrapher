@@ -27,6 +27,7 @@ public class EventRepository {
 
     // Constants
     public static final SimpleDateFormat EVENT_STRING_FORMAT = new SimpleDateFormat("MM.dd.yyyy hh:mma");
+    public static final SimpleDateFormat EVENT_DAY_FORMAT = new SimpleDateFormat("MM.dd.yyyy");
 
     // Variables
     private final InputManager inputManager;
@@ -44,9 +45,6 @@ public class EventRepository {
 
         // Build Event List From Raw Input
         buildEventList();
-
-        List<Event> testList = eventList.stream().filter(event -> event.type == EventType.SOLO).collect(Collectors.toList());
-        System.out.println(testList.size());
     }
 
 
@@ -89,5 +87,24 @@ public class EventRepository {
         event.type = eventType;
 
         return event;
+    }
+
+
+    /*--- Public Data Access Methods ---*/
+
+    public List<Event> getFullEventList() {
+        return eventList;
+    }
+
+    public List<Event> getSoloEventList() {
+        return eventList.stream().filter(event -> event.type == EventType.SOLO).collect(Collectors.toList());
+    }
+
+    public List<Event> getVirtualEventList() {
+        return eventList.stream().filter(event -> event.type == EventType.VIRTUAL).collect(Collectors.toList());
+    }
+
+    public List<Event> getSharedEventList() {
+        return eventList.stream().filter(event -> event.type == EventType.SHARED).collect(Collectors.toList());
     }
 }

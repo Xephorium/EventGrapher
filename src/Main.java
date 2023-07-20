@@ -12,10 +12,8 @@ import ui.GraphWindow;
 public class Main {
 
     public static void main(String[] args) {
-
-        EventRepository eventRepository = new EventRepository();
-
-        //GraphWindow graphWindow = new GraphWindow();
-        //graphWindow.show();
+        //EventRepository eventRepository = new EventRepository();
+        GraphWindow graphWindow = new GraphWindow();
+        graphWindow.show();
     }
 }

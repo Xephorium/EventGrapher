@@ -1,6 +1,8 @@
 package ui;
 
+import io.EventRepository;
 import io.InputReader;
+import model.Event;
 import ui.utility.DisplayUtility;
 
 import javax.swing.*;
@@ -10,6 +12,11 @@ import java.awt.geom.Line2D;
 import java.text.DecimalFormat;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
+import java.time.DayOfWeek;
+import java.time.LocalDate;
+import java.time.ZoneId;
+import java.time.format.DateTimeFormatter;
+import java.time.temporal.TemporalAdjusters;
 import java.util.Calendar;
 import java.util.Date;
 import java.util.List;
@@ -88,10 +95,10 @@ class GraphPanel extends JPanel {
     private DecimalFormat DECIMAL_FORMAT_P = new DecimalFormat("0.#");
 
     // Data Variables
-    private List<Date> fullEventList;
-    private List<Date> soloEventList;
-    private List<Date> sharedEventList;
-    private List<Date> virtualEventList;
+    private List<Event> fullEventList;
+    private List<Event> soloEventList;
+    private List<Event> sharedEventList;
+    private List<Event> virtualEventList;
 
     // Stat Variables
     private double dailyAverageEvents;
@@ -110,15 +117,15 @@ class GraphPanel extends JPanel {
     GraphPanel() {
 
         // Parse & Store Event Data
-        InputReader inputReader = new InputReader();
-        fullEventList = inputReader.getFullEventList();
-        soloEventList = inputReader.getSoloEventList();
-        sharedEventList = inputReader.getSharedEventList();
-        virtualEventList = inputReader.getVirtualEventList();
+        EventRepository eventRepository = new EventRepository();
+        fullEventList = eventRepository.getFullEventList();
+        soloEventList = eventRepository.getSoloEventList();
+        sharedEventList = eventRepository.getSharedEventList();
+        virtualEventList = eventRepository.getVirtualEventList();
 
         // Perform Calculations
-        dailyAverageEvents = fullEventList.size() / 366.0;    // 2020 Leap Year
-        weeklyAverageEvents = fullEventList.size() / 52.2857; // 52 Weeks + 2/7 Extra
+        dailyAverageEvents = fullEventList.size() / (float) getDaysInThisYear();
+        weeklyAverageEvents = fullEventList.size() / (float) getWeeksInThisYear();
         soloEventPercent = soloEventList.size() / (double) fullEventList.size();
         sharedEventPercent = sharedEventList.size() / (double) fullEventList.size();
         virtualEventPercent = virtualEventList.size() / (double) fullEventList.size();
@@ -170,7 +177,7 @@ class GraphPanel extends JPanel {
         // Title
         graphics.setColor(TEXT_COLOR_PRIMARY);
         graphics.setFont(new Font("Sanserif", Font.BOLD, 19));
-        drawCenteredString(graphics, "2020 Events", new Point(DisplayUtility.getWindowCenterX() - 13, currentHeight));
+        drawCenteredString(graphics, "" + getThisYear() + " Events", new Point(DisplayUtility.getWindowCenterX() - 13, currentHeight));
         currentHeight += graphics.getFontMetrics().getHeight();
         currentHeight += TEXT_LINE_SPACING;
         currentHeight += 20;
@@ -263,11 +270,11 @@ class GraphPanel extends JPanel {
     private void drawAnnualActivity(Graphics2D graphics, Point location) {
 
         // Local Variables
-        int rows = 6;           // Days of the Week (0-6)
-        int currentRow = 2;     // 2020 Starts on Wednesday
-        int currentColumn = 0;  // First Week
-        int daysInYear = 366;
-        Date currentDay = getDateFromString("01.01.2020");
+        int rows = 6;                                      // Days of the Week (0-6)
+        int currentRow = getFirstOfYearAsWeekdayInteger();
+        int currentColumn = 0;                             // First Week
+        int daysInYear = getDaysInThisYear();
+        Date currentDay = getDateFromString("01.01." + getThisYear());
         int currentMonth = currentDay.getMonth();
 
         // Draw Calendar
@@ -275,8 +282,8 @@ class GraphPanel extends JPanel {
 
             // Calculate Day Color
             Date testDay = currentDay;
-            List<Date> dayEvents = fullEventList.stream().filter(day ->
-                    areDatesEqual(testDay, day)
+            List<Event> dayEvents = fullEventList.stream().filter(event ->
+                    areDatesEqual(testDay, event.date)
             ).collect(Collectors.toList());
             int eventsForDay = dayEvents.size();
             Color dayColor = getDailyColorFromNumberEvents(eventsForDay);
@@ -287,16 +294,16 @@ class GraphPanel extends JPanel {
                     location.y + (currentRow * (DAY_GRID_BOX_SIZE + DAY_GRID_BOX_SPACING))
             );
             boolean monthChange = false;
-            if (currentDay.getMonth() != currentMonth || areDatesEqual(currentDay, new Date("01/01/2020"))) {
+            if (currentDay.getMonth() != currentMonth || areDatesEqual(currentDay, new Date("01/01/"+getThisYear()))) {
                 currentMonth = currentDay.getMonth();
                 monthChange = true;
             }
-            List<Date> sharedEvents = sharedEventList.stream().filter(day ->
-                    areDatesEqual(testDay, day)
+            List<Event> sharedEvents = sharedEventList.stream().filter(event ->
+                    areDatesEqual(testDay, event.date)
             ).collect(Collectors.toList());
             boolean sharedEvent = sharedEvents.size() > 0;
-            List<Date> virtualEvents = virtualEventList.stream().filter(day ->
-                    areDatesEqual(testDay, day)
+            List<Event> virtualEvents = virtualEventList.stream().filter(event ->
+                    areDatesEqual(testDay, event.date)
             ).collect(Collectors.toList());
             boolean virtualEvent = virtualEvents.size() > 0;
             drawDayGridBox(graphics, boxLocation, dayColor, monthChange, sharedEvent, virtualEvent);
@@ -410,7 +417,7 @@ class GraphPanel extends JPanel {
     /* Note: Method draws a grid of rectangles, color coded to indicate
      *       the number of events that took place on each hour of the week.
      */
-    private void drawWeeklyGraph(Graphics2D graphics, List<Date> events, Point location, String title, boolean showTimes) {
+    private void drawWeeklyGraph(Graphics2D graphics, List<Event> events, Point location, String title, boolean showTimes) {
 
         // Local Variables
         int HOUR_WIDTH = 23;
@@ -419,7 +426,7 @@ class GraphPanel extends JPanel {
         int hours = 23;
         int currentNumericHour = 0;
         int currentDay = 0;
-        Date currentHour = getDateOneHourLater(new Date("01/06/2020")); // First Monday of 2020 at 1 AM
+        Date currentHour = getDateOneHourLater(getFirstWeekdayOfYear(DayOfWeek.MONDAY));  // First Monday of Year at 1am
 
         // Determine Maximum Event Hour
         int maxEvents = 0;
@@ -427,8 +434,8 @@ class GraphPanel extends JPanel {
 
             // Find Matching Hours
             Date hour = currentHour;
-            List<Date> hourlyEvents = events.stream().filter(event ->
-                    areEventsSameWeeklyHour(hour, event)
+            List<Event> hourlyEvents = events.stream().filter(event ->
+                    areEventsSameWeeklyHour(hour, event.date)
             ).collect(Collectors.toList());
 
             if (hourlyEvents.size() > maxEvents) {
@@ -444,8 +451,8 @@ class GraphPanel extends JPanel {
 
             // Find Matching Hours
             Date hour = currentHour;
-            List<Date> hourlyEvents = events.stream().filter(event ->
-                    areEventsSameWeeklyHour(hour, event)
+            List<Event> hourlyEvents = events.stream().filter(event ->
+                    areEventsSameWeeklyHour(hour, event.date)
             ).collect(Collectors.toList());
 
             // Prepare To Draw Box
@@ -541,14 +548,14 @@ class GraphPanel extends JPanel {
     /* Note: Method draws a bar graph, color coded to indicate how many
      *       events of each type took place on each day of the week.
      */
-    private void drawDailyGraph(Graphics2D graphics, String title, Point location, List<Date> events) {
+    private void drawDailyGraph(Graphics2D graphics, String title, Point location, List<Event> events) {
 
         // Local Variables
         int DAY_WIDTH = 21;
         int DAY_MAX_HEIGHT = 125;
         int DAY_SPACE = 3;
         int DAYS = 7;
-        Date currentDay = new Date("01/06/2020");
+        Date currentDay = getFirstWeekdayOfYear(DayOfWeek.MONDAY);  // First Monday of Year at midnight
 
         // Determine Maximum Occurrences
         int maxOccurrences = 0;
@@ -556,8 +563,8 @@ class GraphPanel extends JPanel {
 
             // Find Matching Days
             Date day = currentDay;
-            List<Date> dailyEvents = events.stream().filter(testDay ->
-                    areDaysOfWeekEqual(day, testDay)
+            List<Event> dailyEvents = events.stream().filter(testDay ->
+                    areDaysOfWeekEqual(day, testDay.date)
             ).collect(Collectors.toList());
 
             if (dailyEvents.size() > maxOccurrences) {
@@ -574,8 +581,8 @@ class GraphPanel extends JPanel {
 
             // Find Matching Days
             Date day = currentDay;
-            List<Date> dailyEvents = events.stream().filter(testDay ->
-                    areDaysOfWeekEqual(day, testDay)
+            List<Event> dailyEvents = events.stream().filter(testDay ->
+                    areDaysOfWeekEqual(day, testDay.date)
             ).collect(Collectors.toList());
 
             if (minOccurrences == 7000) {
@@ -594,13 +601,13 @@ class GraphPanel extends JPanel {
         }
 
         // Draw Graph
-        currentDay = new Date("01/06/2020");
+        currentDay = getFirstWeekdayOfYear(DayOfWeek.MONDAY);  // First Monday of Year at midnight
         for (int x = 0; x < DAYS; x++) {
 
             // Find Day's Occurrences
             Date day = currentDay;
-            List<Date> dailyEvents = events.stream().filter(testDay ->
-                    areDaysOfWeekEqual(day, testDay)
+            List<Event> dailyEvents = events.stream().filter(testDay ->
+                    areDaysOfWeekEqual(day, testDay.date)
             ).collect(Collectors.toList());
 
             // Draw Background
@@ -686,8 +693,8 @@ class GraphPanel extends JPanel {
         int HOUR_MAX_HEIGHT = 125;
         int HOUR_SPACE = 3;
         int HOURS = 24;
-        Date currentHour = getDateOneHourLater(new Date("01/06/2020"));  // First Monday of 2020 at 1 AM
-        List<Date> events = fullEventList;
+        Date currentHour = getDateOneHourLater(getFirstWeekdayOfYear(DayOfWeek.MONDAY)); // First Monday of Year at 1am
+        List<Event> events = fullEventList;
 
         // Determine Maximum Occurrences
         int maxOccurrences = 0;
@@ -695,8 +702,8 @@ class GraphPanel extends JPanel {
 
             // Find Matching Days
             Date hour = currentHour;
-            List<Date> hourlyEvents = events.stream().filter(testHour ->
-                    areHoursOfDayEqual(hour, testHour)
+            List<Event> hourlyEvents = events.stream().filter(testHour ->
+                    areHoursOfDayEqual(hour, testHour.date)
             ).collect(Collectors.toList());
 
             if (hourlyEvents.size() > maxOccurrences) {
@@ -708,13 +715,13 @@ class GraphPanel extends JPanel {
         }
 
         // Draw Graph
-        currentHour = getDateOneHourLater(new Date("01/06/2020"));  // First Monday of 2020 at 1 AM
+        currentHour = getDateOneHourLater(getFirstWeekdayOfYear(DayOfWeek.MONDAY)); // First Monday of Year at 1am
         for (int x = 0; x < HOURS; x++) {
 
             // Find Day's Occurrences
             Date hour = currentHour;
-            List<Date> hourlyEvents = events.stream().filter(testHour ->
-                    areHoursOfDayEqual(hour, testHour)
+            List<Event> hourlyEvents = events.stream().filter(testHour ->
+                    areHoursOfDayEqual(hour, testHour.date)
             ).collect(Collectors.toList());
 
             // Draw Background
@@ -819,14 +826,14 @@ class GraphPanel extends JPanel {
 
         // Find Longest Gap
         long longestGap = 0;
-        Date start = fullEventList.get(0);
-        Date end = fullEventList.get(1);
+        Date start = fullEventList.get(0).date;
+        Date end = fullEventList.get(1).date;
         for (int x = 0; x < fullEventList.size() - 2; x++) {
-            long testGap = fullEventList.get(x + 1).getTime() - fullEventList.get(x).getTime();
+            long testGap = fullEventList.get(x + 1).date.getTime() - fullEventList.get(x).date.getTime();
             if (testGap > longestGap) {
                 longestGap = testGap;
-                start = fullEventList.get(x);
-                end = fullEventList.get(x + 1);
+                start = fullEventList.get(x).date;
+                end = fullEventList.get(x + 1).date;
             }
         }
 
@@ -848,15 +855,15 @@ class GraphPanel extends JPanel {
     private String getShortestGap() {
 
         // Find Shortest Gap
-        long shortestGap = fullEventList.get(1).getTime() - fullEventList.get(0).getTime();
-        Date start = fullEventList.get(0);
-        Date end = fullEventList.get(1);
+        long shortestGap = fullEventList.get(1).date.getTime() - fullEventList.get(0).date.getTime();
+        Date start = fullEventList.get(0).date;
+        Date end = fullEventList.get(1).date;
         for (int x = 1; x < fullEventList.size() - 3; x++) {
-            long testGap = fullEventList.get(x + 1).getTime() - fullEventList.get(x).getTime();
+            long testGap = fullEventList.get(x + 1).date.getTime() - fullEventList.get(x).date.getTime();
             if (testGap < shortestGap) {
                 shortestGap = testGap;
-                start = fullEventList.get(x);
-                end = fullEventList.get(x + 1);
+                start = fullEventList.get(x).date;
+                end = fullEventList.get(x + 1).date;
             }
         }
 
@@ -881,13 +888,13 @@ class GraphPanel extends JPanel {
         // Find Peak Day
         int most = 0;
         Date peakDay = new Date();
-        for (Date event : fullEventList) {
-            List<Date> dayEvents = fullEventList.stream().filter(day ->
-                    areDatesEqual(event, day)
+        for (Event event : fullEventList) {
+            List<Event> dayEvents = fullEventList.stream().filter(e ->
+                    areDatesEqual(event.date, e.date)
             ).collect(Collectors.toList());
             if (dayEvents.size() > most) {
                 most = dayEvents.size();
-                peakDay = getZeroTimeDate(event);
+                peakDay = getZeroTimeDate(event.date);
             }
         }
 
@@ -900,11 +907,11 @@ class GraphPanel extends JPanel {
         int most = 0;
         Date peakWeekStart = new Date();
         for (int x = 0; x < fullEventList.size() - 8; x++) {
-            Date startEvent = fullEventList.get(x);
+            Date startEvent = fullEventList.get(x).date;
             Date rangeEnd = getDateOneWeekLater(startEvent);
 
-            List<Date> weekEvents = fullEventList.stream().filter(day ->
-                    day.compareTo(startEvent) >= 0 && rangeEnd.compareTo(day) > 0
+            List<Event> weekEvents = fullEventList.stream().filter(event ->
+                    event.date.compareTo(startEvent) >= 0 && rangeEnd.compareTo(event.date) > 0
             ).collect(Collectors.toList());
             if (weekEvents.size() > most) {
                 most = weekEvents.size();
@@ -1031,6 +1038,54 @@ class GraphPanel extends JPanel {
                 clamp(lerp(a.getGreen(), b.getGreen(), factor), 0, 255),
                 clamp(lerp(a.getBlue(), b.getBlue(), factor), 0, 255)
         );
+    }
+
+
+    /*--- Private Date Methods ---*/
+
+    private int getThisYear() {
+        return fullEventList.get(0).date.getYear() + 1900;
+    }
+
+    private int getDaysInThisYear() {
+        Calendar cal = Calendar.getInstance();
+        cal.setTime(fullEventList.get(0).date);
+        return cal.getActualMaximum(Calendar.DAY_OF_YEAR);
+    }
+
+    private double getWeeksInThisYear() {
+        if (getDaysInThisYear() == 365) {
+            return 52.0;
+        } else {
+            return 52.2857; // 52 Weeks + 2/7 Extra
+        }
+    }
+
+    private int getFirstOfYearAsWeekdayInteger() {
+        String firstOfYear = "" + getThisYear() + "0101";
+        Date date = getDateFromLocalDate(LocalDate.parse(firstOfYear, DateTimeFormatter.BASIC_ISO_DATE));
+        return getWeekdayFromDate(date);
+    }
+
+    // Returns an integer representing the day of the week.
+    // Ex: Mon = 0, Tues = 1, Wed = 2, etc...
+    private int getWeekdayFromDate(Date date) {
+        Calendar cal = Calendar.getInstance();
+        cal.setTime(date);
+        return (cal.get(Calendar.DAY_OF_WEEK) - 2) % 7;
+    }
+
+    private Date getFirstWeekdayOfYear(DayOfWeek day) {
+        String firstOfYear = "" + getThisYear() + "0101";
+        LocalDate firstMondayLocalDate = LocalDate.parse(
+                firstOfYear,
+                DateTimeFormatter.BASIC_ISO_DATE
+        ).with(TemporalAdjusters.firstInMonth(day));
+        return getDateFromLocalDate(firstMondayLocalDate);
+    }
+
+    private Date getDateFromLocalDate(LocalDate localDate) {
+        return Date.from(localDate.atStartOfDay(ZoneId.systemDefault()).toInstant());
     }
 
 
