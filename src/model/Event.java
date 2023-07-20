@@ -1,5 +1,7 @@
 package model;
 
+import model.types.EventType;
+
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
@@ -10,7 +12,7 @@ public class Event {
     /*--- Variables ---*/
 
     public Date date;
-    public String type;
+    public EventType type;
     public List<String> headliners;
     public String location;
     public List<String> gear;
@@ -22,7 +24,7 @@ public class Event {
 
     public Event() {
         date = new Date();
-        type = "";
+        type = EventType.SOLO;
         headliners = new ArrayList<>();
         location = "";
         gear = new ArrayList<>();
